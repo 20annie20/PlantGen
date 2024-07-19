@@ -26,11 +26,11 @@ if __name__ == "__main__":
     with open(os.path.normpath(rules_file), "r", encoding="utf-8") as file_handle:
         rules_list = json.load(file_handle)
 
-    operator_list = operator_parser.mapListOfSymbols(instruction)
+    operator_list = operator_parser.map_list_of_symbols(instruction)
 
     transformer = Transformer(operator_list, rules_list, 2)
     transformer.replace()
     while transformer.stack:
-        transformer.transform()
+        transformer.apply_operator()
 
     meshBuilder.finish()
