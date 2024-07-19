@@ -1,9 +1,11 @@
 """ This module contain operator definitions - L-system grammar """
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 from skeleton_output_builder import skeleton_builder
 
 
+@dataclass
 class Operator(ABC):
     """ Interface abstract class Operator """
     @abstractmethod
@@ -11,15 +13,17 @@ class Operator(ABC):
         """ Interface method - execute operation """
 
 
+@dataclass
 class Branch(Operator):
     """ Operator representing adding branch segment """
     symbol = "F"
 
     def execute(self) -> bool:
         """ Add new branch segment """
-        return skeleton_builder.addBranch(10)
+        return skeleton_builder.add_branch(10)
 
 
+@dataclass
 class RotateRight2D(Operator):
     """ Operator representing rotating the branch to the right in 2D """
     symbol = "+"
@@ -29,6 +33,7 @@ class RotateRight2D(Operator):
         return skeleton_builder.rotate(90)
 
 
+@dataclass
 class RotateLeft(Operator):
     """ Operator representing rotating the branch to the left in 2D """
     symbol = "-"

@@ -11,7 +11,7 @@ from turtle import right, forward, Turtle
 class SkeletonOutputBuilder(ABC):
     """ Interface class of a skeleton builder """
     @abstractmethod
-    def addBranch(self, length):
+    def add_branch(self, length):
         """ Interface method of adding a branch """
 
     @abstractmethod
@@ -31,7 +31,7 @@ class TurtleSkeletonBuilder(SkeletonOutputBuilder):
         """ rotate turtle """
         self.drawStack.append((right, angle))
 
-    def addBranch(self, length):
+    def add_branch(self, length):
         """ draw branch """
         self.drawStack.append((forward, length))
 

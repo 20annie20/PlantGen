@@ -3,9 +3,9 @@ after all the replacements acceptable within bounding volume
 """
 
 import random
+from collections import deque
 
 from l_system_operator import Operator, Parser
-from collections import deque
 
 
 class Transformer:
