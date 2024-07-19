@@ -28,15 +28,15 @@ class TurtleSkeletonBuilder(SkeletonOutputBuilder):
     drawStack = []
 
     def rotate(self, angle):
-        """"""
+        """ rotate turtle """
         self.drawStack.append((right, angle))
 
     def addBranch(self, length):
-        """"""
+        """ draw branch """
         self.drawStack.append((forward, length))
 
     def finish(self):
-        """"""
+        """ execute all turtle commands """
         t = Turtle()
         map(lambda f, param: f(param), self.drawStack)
         t.screen.mainloop()
