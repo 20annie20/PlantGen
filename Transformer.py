@@ -1,6 +1,7 @@
+""" This module applies rules and executes them after all the replacements acceptable within bounding volume """
+
 import random
 
-from MeshOutputBuilder import MeshOutputBuilder
 from Operator import Operator, Parser
 from collections import deque
 
@@ -27,7 +28,6 @@ class Transformer:
                     self.stack.append(operator)
             self.iterations -= 1
 
-    def transform(self, meshBuilder: MeshOutputBuilder):
-        rule = self.stack.popleft()
-        rule.execute()
-
+    def transform(self):
+        operator = self.stack.popleft()
+        operator.execute()

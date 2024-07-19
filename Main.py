@@ -1,10 +1,15 @@
+""" main function
+Takes set of transformation rules per given species, user parameters and an initial word
+produces a plant skeleton using L-systems in a bounded area
+"""
+
 import json
 import os
-
-from Operator import *
-from MeshOutputBuilder import *
-from Transformer import Transformer
 import argparse
+
+from Operator import Parser
+from SkeletonOutputBuilder import TurtleSkeletonBuilder
+from Transformer import Transformer
 
 input_parser = argparse.ArgumentParser()
 input_parser.add_argument("-i", help="Initial generation ruleset")
@@ -12,13 +17,14 @@ input_parser.add_argument("-r", help="Initial generation ruleset")
 
 if __name__ == "__main__":
     operator_parser = Parser()
-    meshBuilder = TurtleMeshBuilder()
+    meshBuilder = TurtleSkeletonBuilder()
 
     args = input_parser.parse_args()
     instruction = args.i
     rules_file = args.r
 
-    rules_list = json.load(open(os.path.normpath(rules_file)))
+    with open(os.path.normpath(rules_file), "r") as file_handle:
+        rules_list = json.load(file_handle)
 
     operator_list = operator_parser.mapListOfSymbols(instruction)
 
@@ -27,6 +33,4 @@ if __name__ == "__main__":
     while transformer.stack:
         transformer.transform(meshBuilder)
 
-    meshBuilder.Finish()
-
-
+    meshBuilder.finish()

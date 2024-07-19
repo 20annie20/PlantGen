@@ -1,30 +1,38 @@
-from MeshOutputBuilder import *
+""" This module contain operator definitions - L-system grammar """
 
-mesh = TurtleMeshBuilder()
+from SkeletonOutputBuilder import *
+
+mesh = TurtleSkeletonBuilder()
+
 
 class Operator(ABC):
     @abstractmethod
     def execute(self) -> bool:
         pass
 
+
 class Branch(Operator):
     symbol = "F"
+
     def execute(self) -> bool:
-        return mesh.AddBranch(10)
+        return mesh.addBranch(10)
 
 
 class RotateRight(Operator):
     symbol = "+"
+
     def execute(self) -> bool:
-        return mesh.Rotate(90)
+        return mesh.rotate(90)
+
 
 class RotateLeft(Operator):
     symbol = "-"
+
     def execute(self) -> bool:
-        return mesh.Rotate(-90)
+        return mesh.rotate(-90)
+
 
 class Parser:
-    # TODO consider defining custom rules in init
     operatorSet = {
         "F": Branch(),
         "+": RotateRight(),
@@ -39,4 +47,3 @@ class Parser:
         for char in instruction:
             operator_list.append(self.mapSymbol(char))
         return operator_list
-
