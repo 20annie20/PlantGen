@@ -5,7 +5,7 @@ which can be further transformed into spline meshes
 """
 
 from abc import ABC, abstractmethod
-from turtle import right, forward, Turtle
+from turtle import right, forward, Turtle # pylint: disable = no-name-in-module
 
 
 class SkeletonOutputBuilder(ABC):
