@@ -9,7 +9,6 @@ class Operator(ABC):
     @abstractmethod
     def execute(self) -> bool:
         """ Interface method - execute operation """
-        pass
 
 
 class Branch(Operator):
@@ -24,7 +23,6 @@ class Branch(Operator):
 class RotateRight2D(Operator):
     """ Operator representing rotating the branch to the right in 2D """
     symbol = "+"
-
 
     def execute(self) -> bool:
         """ Rotate branch to the right operation """

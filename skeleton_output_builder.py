@@ -13,17 +13,14 @@ class SkeletonOutputBuilder(ABC):
     @abstractmethod
     def addBranch(self, length):
         """ Interface method of adding a branch """
-        pass
 
     @abstractmethod
     def finish(self):
         """ Interface method of finishing a skeleton """
-        pass
 
     @abstractmethod
     def rotate(self, angle):
         """ Interface method of rotating a branch """
-        pass
 
 
 class TurtleSkeletonBuilder(SkeletonOutputBuilder):
