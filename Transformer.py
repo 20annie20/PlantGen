@@ -1,14 +1,33 @@
+import random
+
 from MeshOutputBuilder import MeshOutputBuilder
-from Rule import Rule
+from Operator import Operator, Parser
 from collections import deque
 
+
 class Transformer:
-    def __init__(self, rule_list: [Rule]):
+    def __init__(self, operand_list: [Operator], rule_list: dict, iterations: int):
         self.stack = deque()
-        self.stack.extend(rule_list)
+        self.stack.extend(operand_list)
+        self.iterations = iterations
+        self.rule_list = rule_list
+
+    def replace(self):
+        old_stack = self.stack.copy()
+        self.stack.clear()
+        parser = Parser()
+
+        while self.iterations > 0:
+            for operator in old_stack:
+                if operator.symbol in self.rule_list.keys():
+                    applicable_rules = self.rule_list[operator.symbol]
+                    rule = random.choice(applicable_rules)
+                    self.stack.extend(parser.mapListOfSymbols(rule))
+                else:
+                    self.stack.append(operator)
+            self.iterations -= 1
 
     def transform(self, meshBuilder: MeshOutputBuilder):
-
         rule = self.stack.popleft()
         rule.execute()
 
