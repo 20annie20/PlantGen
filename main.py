@@ -7,7 +7,7 @@ import json
 import os
 import argparse
 
-from operator import Parser
+from l_system_operator import Parser
 from skeleton_output_builder import TurtleSkeletonBuilder
 from transformer import Transformer
 
