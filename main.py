@@ -7,9 +7,9 @@ import json
 import os
 import argparse
 
-from Operator import Parser
-from SkeletonOutputBuilder import TurtleSkeletonBuilder
-from Transformer import Transformer
+from operator import Parser
+from skeleton_output_builder import TurtleSkeletonBuilder
+from transformer import Transformer
 
 input_parser = argparse.ArgumentParser()
 input_parser.add_argument("-i", help="Initial generation ruleset")
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     instruction = args.i
     rules_file = args.r
 
-    with open(os.path.normpath(rules_file), "r") as file_handle:
+    with open(os.path.normpath(rules_file), "r", encoding="utf-8") as file_handle:
         rules_list = json.load(file_handle)
 
     operator_list = operator_parser.mapListOfSymbols(instruction)
@@ -31,6 +31,6 @@ if __name__ == "__main__":
     transformer = Transformer(operator_list, rules_list, 2)
     transformer.replace()
     while transformer.stack:
-        transformer.transform(meshBuilder)
+        transformer.transform()
 
     meshBuilder.finish()

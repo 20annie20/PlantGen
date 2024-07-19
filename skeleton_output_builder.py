@@ -4,7 +4,7 @@ into spline meshes
 """
 
 from abc import ABC, abstractmethod
-from turtle import *
+from turtle import right, forward, Turtle
 
 
 class SkeletonOutputBuilder(ABC):
@@ -32,5 +32,7 @@ class TurtleSkeletonBuilder(SkeletonOutputBuilder):
 
     def finish(self):
         t = Turtle()
-        draw = [f(param) for f, param in self.drawStack]
+        [f(param) for f, param in self.drawStack]
         t.screen.mainloop()
+
+skeleton_builder = TurtleSkeletonBuilder()

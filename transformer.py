@@ -2,7 +2,7 @@
 
 import random
 
-from Operator import Operator, Parser
+from operator import Operator, Parser
 from collections import deque
 
 
