@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from l_system_simulator.skeleton_output_builder import skeleton_builder
 
 ANGLE = 25.7
-LENGTH = 3
+LENGTH = 2
 
 
 @dataclass

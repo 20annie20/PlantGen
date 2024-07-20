@@ -10,7 +10,7 @@ import os
 from l_system_simulator.l_system_operator import Parser
 
 from l_system_simulator.l_system import LSystemSimulator
-from l_system_simulator.skeleton_output_builder import TurtleSkeletonBuilder
+from l_system_simulator.skeleton_output_builder import PyGameSkeletonBuilder
 
 # input_parser = argparse.ArgumentParser()
 # input_parser.add_argument("-i", help="Initial tree")
@@ -18,14 +18,14 @@ from l_system_simulator.skeleton_output_builder import TurtleSkeletonBuilder
 
 if __name__ == "__main__":
     operator_parser = Parser()
-    meshBuilder = TurtleSkeletonBuilder()
+    meshBuilder = PyGameSkeletonBuilder()
 
     # args = input_parser.parse_args()
     # initial_tree = args.i
     # production_file = args.r
     INITIAL_TREE = "X"
     PRODUCTION_FILE = "rules/rules.json"
-    ITERATIONS = 5
+    ITERATIONS = 7
 
     with open(os.path.normpath(PRODUCTION_FILE), "r", encoding="utf-8") as file_handle:
         production_rules = json.load(file_handle)
