@@ -2,14 +2,18 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from skeleton_output_builder import skeleton_builder
+from LSystemSimulator.skeleton_output_builder import skeleton_builder
+
+ANGLE = 25.7
+LENGTH = 3
 
 
 @dataclass
 class Operator(ABC):
     """ Interface abstract class Operator """
+
     @abstractmethod
-    def execute(self) -> bool:
+    def execute(self):
         """ Interface method - execute operation """
 
 
@@ -18,9 +22,9 @@ class Branch(Operator):
     """ Operator representing adding branch segment """
     symbol = "F"
 
-    def execute(self) -> bool:
+    def execute(self):
         """ Add new branch segment """
-        return skeleton_builder.add_branch(10)
+        skeleton_builder.add_branch(LENGTH)
 
 
 @dataclass
@@ -28,9 +32,9 @@ class RotateRight2D(Operator):
     """ Operator representing rotating the branch to the right in 2D """
     symbol = "+"
 
-    def execute(self) -> bool:
+    def execute(self):
         """ Rotate branch to the right operation """
-        return skeleton_builder.rotate(90)
+        skeleton_builder.rotate(-ANGLE)
 
 
 @dataclass
@@ -38,17 +42,40 @@ class RotateLeft(Operator):
     """ Operator representing rotating the branch to the left in 2D """
     symbol = "-"
 
-    def execute(self) -> bool:
+    def execute(self):
         """ Rotate branch to the left operation """
-        return skeleton_builder.rotate(-90)
+        skeleton_builder.rotate(ANGLE)
+
+
+@dataclass
+class PushStack(Operator):
+    """ Operator representing pushing current state onto a stack """
+    symbol = "["
+
+    def execute(self):
+        """ Push current state onto a skeleton's stack """
+        skeleton_builder.push_state()
+
+
+@dataclass
+class PopStack(Operator):
+    """ Operator representing popping current state from a stack """
+    symbol = "]"
+
+    def execute(self):
+        """ Push latest state from a skeleton's stack """
+        skeleton_builder.pop_state()
 
 
 class Parser:
     """ Parses initial word strings and converts to list of rule objects """
     operatorSet = {
         "F": Branch(),
+        "X": Branch(),
         "+": RotateRight2D(),
-        "-": RotateLeft()
+        "-": RotateLeft(),
+        "[": PushStack(),
+        "]": PopStack()
     }
 
     def map_symbol(self, symbol: str) -> Operator:

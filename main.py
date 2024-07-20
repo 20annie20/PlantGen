@@ -5,32 +5,36 @@ produces a plant skeleton using L-systems in a bounded area
 
 import json
 import os
-import argparse
+# import argparse
 
-from l_system_operator import Parser
-from skeleton_output_builder import TurtleSkeletonBuilder
-from transformer import Transformer
+from LSystemSimulator.l_system_operator import Parser
 
-input_parser = argparse.ArgumentParser()
-input_parser.add_argument("-i", help="Initial generation ruleset")
-input_parser.add_argument("-r", help="Initial generation ruleset")
+from LSystemSimulator.l_system import LSystemSimulator
+from LSystemSimulator.skeleton_output_builder import TurtleSkeletonBuilder
+
+# input_parser = argparse.ArgumentParser()
+# input_parser.add_argument("-i", help="Initial tree")
+# input_parser.add_argument("-p", help="Production rules")
 
 if __name__ == "__main__":
     operator_parser = Parser()
     meshBuilder = TurtleSkeletonBuilder()
 
-    args = input_parser.parse_args()
-    instruction = args.i
-    rules_file = args.r
+    # args = input_parser.parse_args()
+    # initial_tree = args.i
+    # production_file = args.r
+    initial_tree = "X"
+    production_file = "rules/rules.json"
+    ITERATIONS = 5
 
-    with open(os.path.normpath(rules_file), "r", encoding="utf-8") as file_handle:
-        rules_list = json.load(file_handle)
+    with open(os.path.normpath(production_file), "r", encoding="utf-8") as file_handle:
+        production_rules = json.load(file_handle)
 
-    operator_list = operator_parser.map_list_of_symbols(instruction)
+    transformer = LSystemSimulator(initial_tree, production_rules, ITERATIONS)
+    produced_word = transformer.produce()
 
-    transformer = Transformer(operator_list, rules_list, 2)
-    transformer.replace()
-    while transformer.stack:
-        transformer.apply_operator()
+    operator_list = operator_parser.map_list_of_symbols(produced_word)
+
+    transformer.apply_operators()
 
     meshBuilder.finish()
