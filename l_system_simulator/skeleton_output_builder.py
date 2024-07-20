@@ -75,7 +75,7 @@ class PyGameSkeletonBuilder(SkeletonOutputBuilder):
     stateStack = []  # stores stack of positions & rotations
     curr_pos = (SCREEN_SIZE_X/2, SCREEN_SIZE_Y)
     curr_rot = -90
-    pygame.init()
+    pygame.init()  # pylint: disable = no-member
 
     # Set up display
     screen = pygame.display.set_mode((SCREEN_SIZE_X, SCREEN_SIZE_Y))
@@ -116,7 +116,7 @@ class PyGameSkeletonBuilder(SkeletonOutputBuilder):
         pygame.display.flip()
         while running:
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+                if event.type == pygame.QUIT:  # pylint: disable = no-member
                     running = False
 
     def push_state(self):
