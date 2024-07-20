@@ -5,10 +5,9 @@ which can be further transformed into spline meshes
 """
 import math
 import turtle
-import pygame
-
 from abc import ABC, abstractmethod
 from turtle import Turtle  # pylint: disable = no-name-in-module
+import pygame  # pylint: disable = import-error
 
 
 class SkeletonOutputBuilder(ABC):
