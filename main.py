@@ -7,10 +7,10 @@ import json
 import os
 # import argparse
 
-from LSystemSimulator.l_system_operator import Parser
+from l_system_simulator.l_system_operator import Parser
 
-from LSystemSimulator.l_system import LSystemSimulator
-from LSystemSimulator.skeleton_output_builder import TurtleSkeletonBuilder
+from l_system_simulator.l_system import LSystemSimulator
+from l_system_simulator.skeleton_output_builder import TurtleSkeletonBuilder
 
 # input_parser = argparse.ArgumentParser()
 # input_parser.add_argument("-i", help="Initial tree")
@@ -23,14 +23,14 @@ if __name__ == "__main__":
     # args = input_parser.parse_args()
     # initial_tree = args.i
     # production_file = args.r
-    initial_tree = "X"
-    production_file = "rules/rules.json"
+    INITIAL_TREE = "X"
+    PRODUCTION_FILE = "rules/rules.json"
     ITERATIONS = 5
 
-    with open(os.path.normpath(production_file), "r", encoding="utf-8") as file_handle:
+    with open(os.path.normpath(PRODUCTION_FILE), "r", encoding="utf-8") as file_handle:
         production_rules = json.load(file_handle)
 
-    transformer = LSystemSimulator(initial_tree, production_rules, ITERATIONS)
+    transformer = LSystemSimulator(INITIAL_TREE, production_rules, ITERATIONS)
     produced_word = transformer.produce()
 
     operator_list = operator_parser.map_list_of_symbols(produced_word)

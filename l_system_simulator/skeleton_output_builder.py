@@ -40,8 +40,8 @@ class TurtleSkeletonBuilder(SkeletonOutputBuilder):
     t = Turtle()
 
     def __init__(self):
-        turtle.mode("logo")
-        turtle.speed(10)
+        turtle.mode("logo") # pylint: disable = no-member
+        self.t.speed(0)
 
     def rotate(self, angle):
         """ rotate turtle """
@@ -81,23 +81,18 @@ class PyGameSkeletonBuilder(SkeletonOutputBuilder):
 
     def rotate(self, angle):
         """ rotate  """
-        pass
 
     def add_branch(self, length):
         """ draw """
-        pass
 
     def finish(self):
         """ execute all commands """
-        pass
 
     def push_state(self):
         """ push current state """
-        pass
 
     def pop_state(self):
         """ pop latest state """
-        pass
 
 
 skeleton_builder = TurtleSkeletonBuilder()

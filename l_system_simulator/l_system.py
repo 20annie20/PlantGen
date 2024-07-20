@@ -3,9 +3,8 @@ after all the replacements acceptable within bounding volume
 """
 
 import random
-from collections import deque
 
-from LSystemSimulator.l_system_operator import Operator, Parser
+from l_system_simulator.l_system_operator import Parser
 
 
 class LSystemSimulator:
