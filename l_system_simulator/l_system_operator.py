@@ -1,10 +1,11 @@
 """ This module contain operator definitions - L-system grammar """
+import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from l_system_simulator.skeleton_output_builder import skeleton_builder
 
-ANGLE = 25.7
+ANGLE = math.radians(87)
 LENGTH = 2
 
 
@@ -38,7 +39,7 @@ class RotateRight2D(Operator):
 
 
 @dataclass
-class RotateLeft(Operator):
+class RotateLeft2D(Operator):
     """ Operator representing rotating the branch to the left in 2D """
     symbol = "-"
 
@@ -67,13 +68,67 @@ class PopStack(Operator):
         skeleton_builder.pop_state()
 
 
+class YawLeft(Operator):
+    """ Operator representing yawing to the left"""
+    symbol = "-"
+
+    def execute(self):
+        """ Apply rotation matrix """
+        skeleton_builder.yaw_left(ANGLE)
+
+
+class YawRight(Operator):
+    """ Operator representing yawing to the right """
+    symbol = "+"
+
+    def execute(self):
+        """ Apply rotation matrix """
+        skeleton_builder.yaw_right(ANGLE)
+
+
+class PitchDown(Operator):
+    """ Operator representing pitch down """
+    symbol = "&"
+
+    def execute(self):
+        """ Apply rotation matrix """
+        skeleton_builder.pitch_down(ANGLE)
+
+
+class PitchUp(Operator):
+    """ Operator representing pitch up """
+    symbol = "^"
+
+    def execute(self):
+        """ Apply rotation matrix """
+        skeleton_builder.pitch_up(ANGLE)
+
+
+class RollLeft(Operator):
+    """ Operator representing roll left """
+    symbol = "\\"
+
+    def execute(self):
+        """ Apply rotation matrix """
+        skeleton_builder.roll_left(ANGLE)
+
+
+class RollRight(Operator):
+    """ Operator representing roll right """
+    symbol = "/"
+
+    def execute(self):
+        """ Apply rotation matrix"""
+        skeleton_builder.roll_right(ANGLE)
+
+
 class Parser:
-    """ Parses initial word strings and converts to list of rule objects """
+    """ Parses initial word strings and converts to list of 2D rule objects """
     operatorSet = {
         "F": Branch(),
         "X": Branch(),
         "+": RotateRight2D(),
-        "-": RotateLeft(),
+        "-": RotateLeft2D(),
         "[": PushStack(),
         "]": PopStack()
     }
@@ -88,3 +143,24 @@ class Parser:
         for char in instruction:
             operator_list.append(self.map_symbol(char))
         return operator_list
+
+
+class Parser3D(Parser):
+    """ Extends 2D parser for three-dimensional operations """
+    operatorSet = {
+        "F": Branch(),
+        "X": Branch(),
+        "A": Branch(),
+        "B": Branch(),
+        "C": Branch(),
+        "D": Branch(),
+        "+": YawLeft(),
+        "-": YawRight(),
+        "&": PitchDown(),
+        "^": PitchUp(),
+        "\\": RollLeft(),
+        "/": RollRight(),
+        #"|": TurnAround(),
+        "[": PushStack(),
+        "]": PopStack()
+    }

@@ -4,7 +4,7 @@ after all the replacements acceptable within bounding volume
 
 import random
 
-from l_system_simulator.l_system_operator import Parser
+from l_system_simulator.l_system_operator import Parser3D
 
 
 class LSystemSimulator:
@@ -32,7 +32,7 @@ class LSystemSimulator:
 
     def apply_operators(self):
         """ Apply operator """
-        parser = Parser()
+        parser = Parser3D()
         for symbol in self.produced_word:
             operator = parser.map_symbol(symbol)
             operator.execute()

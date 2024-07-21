@@ -1,4 +1,6 @@
 {
-  "F": ["FF"],
-  "X": ["F[+X][-X]FX"]
+  "A": ["B-F+CFC+F-D&F^D-F+&&CFC+F+B//"],
+  "B": ["A&F^CFB^F^D^^-F-D^F^BFC^F^A//"],
+  "C": ["D^F^B-F+C^F^A&&FA&F^C+F+B^F^D//"],
+  "D": ["CFB-F+BFA&F^A&&FB-F+BFC//"]
 }

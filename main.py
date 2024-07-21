@@ -7,7 +7,7 @@ import json
 import os
 # import argparse
 
-from l_system_simulator.l_system_operator import Parser
+from l_system_simulator.l_system_operator import Parser3D
 
 from l_system_simulator.l_system import LSystemSimulator
 from l_system_simulator.skeleton_output_builder import PyGameSkeletonBuilder
@@ -17,15 +17,15 @@ from l_system_simulator.skeleton_output_builder import PyGameSkeletonBuilder
 # input_parser.add_argument("-p", help="Production rules")
 
 if __name__ == "__main__":
-    operator_parser = Parser()
+    operator_parser = Parser3D()
     meshBuilder = PyGameSkeletonBuilder()
 
     # args = input_parser.parse_args()
     # initial_tree = args.i
     # production_file = args.r
-    INITIAL_TREE = "X"
+    INITIAL_TREE = "A"
     PRODUCTION_FILE = "rules/rules.json"
-    ITERATIONS = 7
+    ITERATIONS = 3
 
     with open(os.path.normpath(PRODUCTION_FILE), "r", encoding="utf-8") as file_handle:
         production_rules = json.load(file_handle)
