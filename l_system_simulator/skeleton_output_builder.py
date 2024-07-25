@@ -64,13 +64,18 @@ class PyGameSkeletonBuilder:
     stateStack = []  # stores stack of positions & rotations
     pygame.init()  # pylint: disable = no-member
 
-    def __init__(self, angle, length):
+    def __init__(self, angle, length, orient_y=False):
         self.curr_pos = np.array([0.0, 0.0, 0.0])
         self.heading = np.array([1.0, 0.0, 0.0])
         self.left = np.array([0.0, 1.0, 0.0])
         self.up = np.array([0.0, 0.0, -1.0])
-        self.angle = angle
+        self.angle = np.radians(angle)
         self.length = length
+        if orient_y:
+            r = rotate(self.up, -np.radians(90))
+            self.heading = r @ self.heading
+            self.left = r @ self.left
+            self.curr_pos += np.array([0.0, -60.0, 0.0])
 
     # Set up display
     screen = pygame.display.set_mode((SCREEN_SIZE_X, SCREEN_SIZE_Y))

@@ -1,0 +1,10 @@
+{
+  "axiom": "X",
+  "iterations": 7,
+  "angle": 22.5,
+  "length": 0.4,
+  "rules": {
+    "X": ["F-[[X]+X]+F[+FX]-X"],
+    "F": ["FF"]
+  }
+}
