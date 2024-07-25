@@ -3,52 +3,29 @@
 Skeleton is a representation of branches edges with orientations and lengths
 which can be further transformed into spline meshes
 """
-import math
+
 import turtle
-from abc import ABC, abstractmethod
 from turtle import Turtle  # pylint: disable = no-name-in-module
 
 import pygame  # pylint: disable = import-error
 import numpy as np
 
 
-class SkeletonOutputBuilder(ABC):
-    """ Interface class of a skeleton builder """
-
-    @abstractmethod
-    def add_branch(self, length):
-        """ Interface method of adding a branch """
-
-    @abstractmethod
-    def finish(self):
-        """ Interface method of finishing a skeleton """
-
-    @abstractmethod
-    def rotate(self, vector, angle):
-        """ Interface method of rotating a branch """
-
-    @abstractmethod
-    def push_state(self):
-        """ Interface method of pushing current state onto a stack """
-
-    @abstractmethod
-    def pop_state(self):
-        """ Interface method of popping the latest state from a stack """
-
-
-class TurtleSkeletonBuilder(SkeletonOutputBuilder):
+class TurtleSkeletonBuilder:
     """ Skeleton drawer using turtle """
 
     stateStack = []  # contains states to draw with - (position, orientation)
 
-    def __init__(self):
+    def __init__(self, angle, length):
         self.t = Turtle()
         turtle.mode("logo")  # pylint: disable = no-member
         self.t.speed(0)
+        self.angle = angle
+        self.length = length
 
-    def rotate(self, vector, angle):
+    def rotate(self, vector):
         """ rotate turtle """
-        self.t.right(angle)
+        self.t.right(self.angle)
 
     def add_branch(self, length):
         """ draw branch """
@@ -69,61 +46,75 @@ class TurtleSkeletonBuilder(SkeletonOutputBuilder):
         self.t.screen.mainloop()
 
 
-class PyGameSkeletonBuilder(SkeletonOutputBuilder):
+def rotate(vector, angle):
+    c, s = np.cos(angle), np.sin(angle)
+    x, y, z = vector
+    r = np.array([
+        [c + x * x * (1 - c), x * y * (1 - c) - z * s, x * z * (1 - c) + y * s],
+        [y * x * (1 - c) + z * s, c + y * y * (1 - c), y * z * (1 - c) - x * s],
+        [z * x * (1 - c) - y * s, z * y * (1 - c) + x * s, c + z * z * (1 - c)]
+    ])
+    return r
+
+
+class PyGameSkeletonBuilder:
     """ Takes the skeleton produced in 3D and renders it in pygame for debug """
     SCREEN_SIZE_X = 860
     SCREEN_SIZE_Y = 640
     stateStack = []  # stores stack of positions & rotations
     pygame.init()  # pylint: disable = no-member
 
-    def __init__(self):
+    def __init__(self, angle, length):
         self.curr_pos = np.array([0.0, 0.0, 0.0])
-        self.heading = np.array([0.0, 1.0, 0.0])
+        self.heading = np.array([1.0, 0.0, 0.0])
         self.left = np.array([0.0, 1.0, 0.0])
-        self.up = np.array([0.0, 0.0, 1.0])
+        self.up = np.array([0.0, 0.0, -1.0])
+        self.angle = angle
+        self.length = length
 
     # Set up display
     screen = pygame.display.set_mode((SCREEN_SIZE_X, SCREEN_SIZE_Y))
     screen.fill("white")
     pygame.display.set_caption('PlantGen debug window')
 
-    def rotate(self, vector, angle):
-        c, s = np.cos(angle), np.sin(angle)
-        x, y, z = vector
-        r = np.array([
-            [c + x * x * (1 - c), x * y * (1 - c) - z * s, x * z * (1 - c) + y * s],
-            [y * x * (1 - c) + z * s, c + y * y * (1 - c), y * z * (1 - c) - x * s],
-            [z * x * (1 - c) - y * s, z * y * (1 - c) + x * s, c + z * z * (1 - c)]
-        ])
-        return r
-
-    def yaw_left(self, angle):
-        r = self.rotate(self.up, angle)
+    def yaw_left(self):
+        r = rotate(self.up, self.angle)
         self.heading = r @ self.heading
         self.left = r @ self.left
 
-    def yaw_right(self, angle):
-        self.yaw_left(-angle)
+    def yaw_right(self):
+        r = rotate(self.up, -self.angle)
+        self.heading = r @ self.heading
+        self.left = r @ self.left
 
-    def pitch_down(self, angle):
-        r = self.rotate(self.left, angle)
+    def turn_around(self):
+        r = rotate(self.up, np.radians(180))
+        self.heading = r @ self.heading
+        self.left = r @ self.left
+
+    def pitch_down(self):
+        r = rotate(self.left, self.angle)
         self.heading = r @ self.heading
         self.up = r @ self.up
 
-    def pitch_up(self, angle):
-        self.pitch_down(-angle)
+    def pitch_up(self):
+        r = rotate(self.left, -self.angle)
+        self.heading = r @ self.heading
+        self.up = r @ self.up
 
-    def roll_left(self, angle):
-        r = self.rotate(self.heading, angle)
+    def roll_left(self):
+        r = rotate(self.heading, self.angle)
         self.left = r @ self.left
         self.up = r @ self.up
 
-    def roll_right(self, angle):
-        self.roll_left(-angle)
+    def roll_right(self):
+        r = rotate(self.heading, -self.angle)
+        self.left = r @ self.left
+        self.up = r @ self.up
 
-    def add_branch(self, length):
+    def add_branch(self):
         """ draw branch """
-        end_pos = self.get_end_pos(length)
+        end_pos = self.get_end_pos(self.length)
         start, end = self.perspective_transform_line(end_pos)
         # perspective to 2D
         pygame.draw.line(
@@ -152,7 +143,8 @@ class PyGameSkeletonBuilder(SkeletonOutputBuilder):
         out_y = self.SCREEN_SIZE_Y / 2 - (z * -y)
         return int(out_x), int(out_y)
 
-    def finish(self):
+    @staticmethod
+    def finish():
         """ setup main loop """
         running = True
         pygame.display.flip()
@@ -172,6 +164,3 @@ class PyGameSkeletonBuilder(SkeletonOutputBuilder):
         self.heading = heading
         self.up = up
         self.left = left
-
-
-skeleton_builder = PyGameSkeletonBuilder()
