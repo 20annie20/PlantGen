@@ -11,7 +11,7 @@ import numpy as np
 from l_system_simulator.l_system_operator import Parser3D
 
 from l_system_simulator.l_system import LSystemSimulator
-from l_system_simulator.skeleton_output_builder import PyGameSkeletonBuilder
+from l_system_simulator.skeleton_output_builder import SkeletonBuilder
 
 # input_parser = argparse.ArgumentParser()
 # input_parser.add_argument("-i", help="Initial tree")
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # initial_tree = args.i
     # production_file = args.r
 
-    PRODUCTION_FILE = "rules/2d_tree1.json"
+    PRODUCTION_FILE = "rules/3d_tree1.json"
 
     with open(os.path.normpath(PRODUCTION_FILE), "r", encoding="utf-8") as file_handle:
         production_rules = json.load(file_handle)
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     ANGLE = production_rules["angle"]
     LENGTH = production_rules["length"]
 
-    meshBuilder = PyGameSkeletonBuilder(ANGLE, LENGTH, True)
+    meshBuilder = SkeletonBuilder(ANGLE, LENGTH, True)
     operator_parser = Parser3D(meshBuilder)
 
     transformer = LSystemSimulator(operator_parser, INITIAL_TREE, production_rules["rules"], ITERATIONS)

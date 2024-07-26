@@ -7,8 +7,8 @@ which can be further transformed into spline meshes
 import turtle
 from turtle import Turtle  # pylint: disable = no-name-in-module
 
-import pygame  # pylint: disable = import-error
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class TurtleSkeletonBuilder:
@@ -57,12 +57,9 @@ def rotate(vector, angle):
     return r
 
 
-class PyGameSkeletonBuilder:
-    """ Takes the skeleton produced in 3D and renders it in pygame for debug """
-    SCREEN_SIZE_X = 860
-    SCREEN_SIZE_Y = 640
+class SkeletonBuilder:
+    """ Builds a skeleton in 3D """
     stateStack = []  # stores stack of positions & rotations
-    pygame.init()  # pylint: disable = no-member
 
     def __init__(self, angle, length, orient_y=False):
         self.curr_pos = np.array([0.0, 0.0, 0.0])
@@ -71,16 +68,12 @@ class PyGameSkeletonBuilder:
         self.up = np.array([0.0, 0.0, -1.0])
         self.angle = np.radians(angle)
         self.length = length
+        self.positions = [self.curr_pos.copy()]
         if orient_y:
             r = rotate(self.up, -np.radians(90))
             self.heading = r @ self.heading
             self.left = r @ self.left
             self.curr_pos += np.array([0.0, -60.0, 0.0])
-
-    # Set up display
-    screen = pygame.display.set_mode((SCREEN_SIZE_X, SCREEN_SIZE_Y))
-    screen.fill("white")
-    pygame.display.set_caption('PlantGen debug window')
 
     def yaw_left(self):
         r = rotate(self.up, self.angle)
@@ -120,50 +113,26 @@ class PyGameSkeletonBuilder:
     def add_branch(self):
         """ draw branch """
         end_pos = self.get_end_pos(self.length)
-        start, end = self.perspective_transform_line(end_pos)
-        # perspective to 2D
-        pygame.draw.line(
-            self.screen,
-            color=pygame.Color("black"),
-            start_pos=start,
-            end_pos=end,
-            width=1
-        )
+        self.positions.append(end_pos.copy())
         self.curr_pos = end_pos
 
     def get_end_pos(self, length) -> ():
         return self.curr_pos + self.heading * length
 
-    def perspective_transform_line(self, end_pos) -> ((int, int), (int, int)):
-        start = self.perspective_transform_point(self.curr_pos)
-        end = self.perspective_transform_point(end_pos)
-        return start, end
-
-    def perspective_transform_point(self, point) -> (int, int):
-        x = point[0]
-        y = point[1]
-        z = point[2] - 4
-
-        out_x = self.SCREEN_SIZE_X / 2 + z * x
-        out_y = self.SCREEN_SIZE_Y / 2 - (z * -y)
-        return int(out_x), int(out_y)
-
-    @staticmethod
-    def finish():
-        """ setup main loop """
-        running = True
-        pygame.display.flip()
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:  # pylint: disable = no-member
-                    running = False
+    def finish(self):
+        """ draw the model in matplotlib """
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        positions = np.array(self.positions)
+        ax.plot(positions[:, 0], positions[:, 1], positions[:, 2])
+        plt.show()
 
     def push_state(self):
         """ add current state - location & rotation """
         self.stateStack.append([self.curr_pos, self.heading, self.up, self.left])
 
     def pop_state(self):
-        """ pop latest turtle state - location & rotation """
+        """ pop latest state - location & rotation """
         location, heading, up, left = self.stateStack.pop()
         self.curr_pos = location
         self.heading = heading
