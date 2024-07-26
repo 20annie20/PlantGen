@@ -7,8 +7,8 @@ which can be further transformed into spline meshes
 import turtle
 from turtle import Turtle  # pylint: disable = no-name-in-module
 
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np  # pylint: disable = import-error
+import matplotlib.pyplot as plt  # pylint: disable = import-error
 
 
 class TurtleSkeletonBuilder:
