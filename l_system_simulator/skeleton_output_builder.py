@@ -23,7 +23,7 @@ class TurtleSkeletonBuilder:
         self.angle = angle
         self.length = length
 
-    def rotate(self, vector):
+    def rotate(self):
         """ rotate turtle """
         self.t.right(self.angle)
 
@@ -47,6 +47,7 @@ class TurtleSkeletonBuilder:
 
 
 def rotate(vector, angle):
+    """ Multiplies orientation vector by the 3D rotation matrix """
     c, s = np.cos(angle), np.sin(angle)
     x, y, z = vector
     r = np.array([
@@ -76,36 +77,43 @@ class SkeletonBuilder:
             self.curr_pos += np.array([0.0, -60.0, 0.0])
 
     def yaw_left(self):
+        """ Yaw left - rotate Y axis """
         r = rotate(self.up, self.angle)
         self.heading = r @ self.heading
         self.left = r @ self.left
 
     def yaw_right(self):
+        """ Yaw right - rotate Y axis """
         r = rotate(self.up, -self.angle)
         self.heading = r @ self.heading
         self.left = r @ self.left
 
     def turn_around(self):
+        """ Yaw 180 degrees - turning around """
         r = rotate(self.up, np.radians(180))
         self.heading = r @ self.heading
         self.left = r @ self.left
 
     def pitch_down(self):
+        """ Pitch down - rotate X axis """
         r = rotate(self.left, self.angle)
         self.heading = r @ self.heading
         self.up = r @ self.up
 
     def pitch_up(self):
+        """ Pitch up - rotate X axis """
         r = rotate(self.left, -self.angle)
         self.heading = r @ self.heading
         self.up = r @ self.up
 
     def roll_left(self):
+        """ Roll left - rotate Z axis """
         r = rotate(self.heading, self.angle)
         self.left = r @ self.left
         self.up = r @ self.up
 
     def roll_right(self):
+        """ Roll right - rotate Z axis """
         r = rotate(self.heading, -self.angle)
         self.left = r @ self.left
         self.up = r @ self.up
@@ -117,6 +125,7 @@ class SkeletonBuilder:
         self.curr_pos = end_pos
 
     def get_end_pos(self, length) -> ():
+        """ Move from current position to the next along the heading direction """
         return self.curr_pos + self.heading * length
 
     def finish(self):
