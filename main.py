@@ -12,10 +12,8 @@ from l_system_simulator.l_system_operator import Parser3D
 from l_system_simulator.l_system import LSystemSimulator
 from l_system_simulator.skeleton_output_builder import SkeletonBuilder
 
-# input_parser = argparse.ArgumentParser()
 
 if __name__ == "__main__":
-    # args = input_parser.parse_args()
 
     PRODUCTION_FILE = "rules/3d_tree1.json"
 

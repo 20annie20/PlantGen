@@ -1,11 +1,25 @@
 """ This module contain operator mappings - L-system grammar """
+from enum import Enum
+
+
+class OperatorCharacters(Enum):
+    YawRight = "+"
+    YawLeft = "-"
+    PitchDown = "&"
+    PitchUp = "^"
+    RollLeft = "\\"
+    RollRight = "/"
+    TurnAround = "|"
+    PushState = "["
+    PopState = "]"
 
 
 class Parser3D:
     """ Matches functions for each operator in the grammar word. """
+
     def __init__(self, skeleton_builder):
         self.operator_set = {
-            "+": skeleton_builder.yaw_right,
+            OperatorCharacters.YawRight.value: skeleton_builder.yaw_right,
             "-": skeleton_builder.yaw_left,
             "&": skeleton_builder.pitch_down,
             "^": skeleton_builder.pitch_up,
