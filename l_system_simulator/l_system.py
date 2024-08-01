@@ -4,12 +4,11 @@ after all the replacements acceptable within bounding volume
 
 import random
 
-from l_system_simulator.l_system_operator import Parser
-
 
 class LSystemSimulator:
     """ Apply grammar rules and apply operators """
-    def __init__(self, initial_word: str, rule_list: dict, iterations: int):
+    def __init__(self, parser, initial_word: str, rule_list: dict, iterations: int):
+        self.parser = parser
         self.produced_word = initial_word
         self.iterations = iterations
         self.rule_list = rule_list
@@ -32,7 +31,7 @@ class LSystemSimulator:
 
     def apply_operators(self):
         """ Apply operator """
-        parser = Parser()
+        parser = self.parser
         for symbol in self.produced_word:
             operator = parser.map_symbol(symbol)
-            operator.execute()
+            operator()

@@ -1,88 +1,28 @@
-""" This module contain operator definitions - L-system grammar """
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-
-from l_system_simulator.skeleton_output_builder import skeleton_builder
-
-ANGLE = 25.7
-LENGTH = 2
+""" This module contain operator mappings - L-system grammar """
 
 
-@dataclass
-class Operator(ABC):
-    """ Interface abstract class Operator """
+class Parser3D:
+    """ Matches functions for each operator in the grammar word. """
+    def __init__(self, skeleton_builder):
+        self.operator_set = {
+            "+": skeleton_builder.yaw_right,
+            "-": skeleton_builder.yaw_left,
+            "&": skeleton_builder.pitch_down,
+            "^": skeleton_builder.pitch_up,
+            "\\": skeleton_builder.roll_left,
+            "/": skeleton_builder.roll_right,
+            "|": skeleton_builder.turn_around,
+            "[": skeleton_builder.push_state,
+            "]": skeleton_builder.pop_state
+        }
+        for i in range(ord("A"), ord("Z")):
+            self.operator_set[chr(i)] = skeleton_builder.add_branch
 
-    @abstractmethod
-    def execute(self):
-        """ Interface method - execute operation """
-
-
-@dataclass
-class Branch(Operator):
-    """ Operator representing adding branch segment """
-    symbol = "F"
-
-    def execute(self):
-        """ Add new branch segment """
-        skeleton_builder.add_branch(LENGTH)
-
-
-@dataclass
-class RotateRight2D(Operator):
-    """ Operator representing rotating the branch to the right in 2D """
-    symbol = "+"
-
-    def execute(self):
-        """ Rotate branch to the right operation """
-        skeleton_builder.rotate(-ANGLE)
-
-
-@dataclass
-class RotateLeft(Operator):
-    """ Operator representing rotating the branch to the left in 2D """
-    symbol = "-"
-
-    def execute(self):
-        """ Rotate branch to the left operation """
-        skeleton_builder.rotate(ANGLE)
-
-
-@dataclass
-class PushStack(Operator):
-    """ Operator representing pushing current state onto a stack """
-    symbol = "["
-
-    def execute(self):
-        """ Push current state onto a skeleton's stack """
-        skeleton_builder.push_state()
-
-
-@dataclass
-class PopStack(Operator):
-    """ Operator representing popping current state from a stack """
-    symbol = "]"
-
-    def execute(self):
-        """ Push latest state from a skeleton's stack """
-        skeleton_builder.pop_state()
-
-
-class Parser:
-    """ Parses initial word strings and converts to list of rule objects """
-    operatorSet = {
-        "F": Branch(),
-        "X": Branch(),
-        "+": RotateRight2D(),
-        "-": RotateLeft(),
-        "[": PushStack(),
-        "]": PopStack()
-    }
-
-    def map_symbol(self, symbol: str) -> Operator:
+    def map_symbol(self, symbol: str):
         """ Map character to a rule class """
-        return self.operatorSet[symbol]
+        return self.operator_set[symbol]
 
-    def map_list_of_symbols(self, instruction: [str]) -> [Operator]:
+    def map_list_of_symbols(self, instruction: [str]):
         """ Map chars in a word instruction to a list of rules """
         operator_list = []
         for char in instruction:
