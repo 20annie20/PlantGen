@@ -3,15 +3,16 @@ from enum import Enum
 
 
 class OperatorCharacters(Enum):
-    YawRight = "+"
-    YawLeft = "-"
-    PitchDown = "&"
-    PitchUp = "^"
-    RollLeft = "\\"
-    RollRight = "/"
-    TurnAround = "|"
-    PushState = "["
-    PopState = "]"
+    """ Mapping characters to operations """
+    YAW_RIGHT = "+"
+    YAW_LEFT = "-"
+    PITCH_DOWN = "&"
+    PITCH_UP = "^"
+    ROLL_LEFT = "\\"
+    ROLL_RIGHT = "/"
+    TURN_AROUND = "|"
+    PUSH_STATE = "["
+    POP_STATE = "]"
 
 
 class Parser3D:
@@ -19,7 +20,7 @@ class Parser3D:
 
     def __init__(self, skeleton_builder):
         self.operator_set = {
-            OperatorCharacters.YawRight.value: skeleton_builder.yaw_right,
+            OperatorCharacters.YAW_RIGHT.value: skeleton_builder.yaw_right,
             "-": skeleton_builder.yaw_left,
             "&": skeleton_builder.pitch_down,
             "^": skeleton_builder.pitch_up,

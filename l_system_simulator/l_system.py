@@ -61,6 +61,7 @@ class LSystemSimulator:
         return ""
 
     def get_predecessor(self, split_idx):
+        """ Get all characters that are the predeceasing context of a given char """
         stack = []
         idx = 0
         stack[idx] = ""
@@ -81,6 +82,7 @@ class LSystemSimulator:
         return predecessor
 
     def get_successor(self, split_idx):
+        """ Get all successor context starting from split_idx """
         brackets = 0
         successor = ""
         for i in range(0, split_idx):
@@ -102,4 +104,3 @@ class LSystemSimulator:
             else:
                 successor += char
         return successor
-
