@@ -14,7 +14,7 @@ class LSystemSimulator:
         self.iterations = iterations
         self.rule_list = rule_list
 
-    def produce(self):
+    def produce(self, ignore=False, ignore_chars=""):
         """ Swap operators according to the grammar rules """
         if self.iterations > 0:
             while self.iterations > 0:
@@ -23,7 +23,7 @@ class LSystemSimulator:
                     if operator in self.rule_list.keys():
                         applicable_rules = self.rule_list[operator]
                         rule = random.choice(applicable_rules)
-                        new_word += self.apply_rule(rule, idx)
+                        new_word += self.apply_rule(rule, idx, ignore, ignore_chars)
                     else:
                         new_word += operator
                 self.iterations -= 1
@@ -37,34 +37,33 @@ class LSystemSimulator:
             operator = parser.map_symbol(symbol)
             operator()
 
-    def apply_rule(self, rule, split_idx):
+    def apply_rule(self, rule, split_idx, ignore, ignore_chars):
         """ Check conditions based on context and applies rule accordingly
         Computes predecessor context and successor context to evaluate
         context rules
         """
 
         match_context = True  # if no context or context is right - apply rule
+        for condition in rule:
+            if "<" in condition:
+                predecessor_context = self.get_predecessor(split_idx, ignore, ignore_chars)
+                left_cond = condition.split("<")[0]  # take left side of the rule
+                if left_cond != predecessor_context:  # I assumed continuous match for now
+                    match_context = False
+            if ">" in condition:
+                successor_context = self.get_successor(split_idx, ignore, ignore_chars)
+                right_cond = condition.split("<")[1]
+                if right_cond != successor_context:
+                    match_context = False
 
-        if "<" in rule:
-            predecessor_context = self.get_predecessor(split_idx)
-            left_cond = rule.split("<")[0]  # take left side of the rule
-            if left_cond not in predecessor_context:  # I assumed continuous match for now
-                match_context = False
-        if ">" in rule:
-            successor_context = self.get_successor(split_idx)
-            right_cond = rule.split("<")[1]
-            if right_cond not in successor_context:
-                match_context = False
-
-        if match_context:
-            return rule.split("=")[-1]  # take the rule production outcome
+            if match_context:
+                return rule.split("=")[-1]  # take the rule production outcome
         return ""
 
-    def get_predecessor(self, split_idx):
-        """ Get all characters that are the predeceasing context of a given char """
-        stack = []
+    def get_predecessor(self, split_idx, ignore, ignore_chars):
+        """ Get strict predecessor context of a given char """
+        stack = [""]
         idx = 0
-        stack[idx] = ""
 
         predecessor = ""
         for i in range(0, split_idx):
@@ -77,23 +76,24 @@ class LSystemSimulator:
                 idx -= 1
             else:
                 stack[idx] += char
-        for item in stack:
-            predecessor += item
-        return predecessor
 
-    def get_successor(self, split_idx):
-        """ Get all successor context starting from split_idx """
+        last = stack[-1]
+        for i in reversed(last):
+            if ignore:
+                if i not in ignore_chars:
+                    return i
+            else:
+                return i
+        return ""
+
+    def get_successor(self, split_idx, ignore, ignore_chars):
+        """ Get strict successor context starting from split_idx """
         brackets = 0
         successor = ""
-        for i in range(0, split_idx):
-            char = self.produced_word[i]
-            if char == "[":
-                brackets += 1
-            elif char == "]":
-                brackets -= 1
 
         idx = split_idx
         length = len(self.produced_word)
+
         while brackets > 0 and idx < length:
             char = self.produced_word[idx]
             idx += 1
@@ -101,6 +101,11 @@ class LSystemSimulator:
                 brackets += 1
             elif char == "]":
                 brackets -= 1
-            else:
-                successor += char
+            elif brackets <= 0:
+                if ignore:
+                    if successor not in ignore_chars:
+                        successor = char
+                        break
+                else:
+                    successor = char
         return successor

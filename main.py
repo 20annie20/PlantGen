@@ -5,17 +5,15 @@ produces a plant skeleton using L-systems in a bounded area
 
 import json
 import os
-# import argparse
 
 from l_system_simulator.l_system_operator import Parser3D
 
 from l_system_simulator.l_system import LSystemSimulator
 from l_system_simulator.skeleton_output_builder import SkeletonBuilder
 
-
 if __name__ == "__main__":
 
-    PRODUCTION_FILE = "rules/3d_tree1.json"
+    PRODUCTION_FILE = "rules/context_tree.json"
 
     with open(os.path.normpath(PRODUCTION_FILE), "r", encoding="utf-8") as file_handle:
         production_rules = json.load(file_handle)
@@ -25,12 +23,19 @@ if __name__ == "__main__":
     ANGLE = production_rules["angle"]
     LENGTH = production_rules["length"]
 
+    if "ignore" in production_rules.keys():
+        IGNORE_CHARACTERS = production_rules["ignore"]
+        DO_IGNORE = True
+    else:
+        DO_IGNORE = False
+        IGNORE_CHARACTERS = []
+
     meshBuilder = SkeletonBuilder(ANGLE, LENGTH, True)
     operator_parser = Parser3D(meshBuilder)
 
     transformer = LSystemSimulator(operator_parser, INITIAL_TREE,
                                    production_rules["rules"], ITERATIONS)
-    produced_word = transformer.produce()
+    produced_word = transformer.produce(DO_IGNORE, IGNORE_CHARACTERS)
 
     operator_list = operator_parser.map_list_of_symbols(produced_word)
 
