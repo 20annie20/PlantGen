@@ -21,17 +21,20 @@ class Parser3D:
     def __init__(self, skeleton_builder):
         self.operator_set = {
             OperatorCharacters.YAW_RIGHT.value: skeleton_builder.yaw_right,
-            "-": skeleton_builder.yaw_left,
-            "&": skeleton_builder.pitch_down,
-            "^": skeleton_builder.pitch_up,
-            "\\": skeleton_builder.roll_left,
-            "/": skeleton_builder.roll_right,
-            "|": skeleton_builder.turn_around,
-            "[": skeleton_builder.push_state,
-            "]": skeleton_builder.pop_state
+            OperatorCharacters.YAW_LEFT.value: skeleton_builder.yaw_left,
+            OperatorCharacters.PITCH_DOWN.value: skeleton_builder.pitch_down,
+            OperatorCharacters.PITCH_UP.value: skeleton_builder.pitch_up,
+            OperatorCharacters.ROLL_LEFT.value: skeleton_builder.roll_left,
+            OperatorCharacters.ROLL_RIGHT.value: skeleton_builder.roll_right,
+            OperatorCharacters.TURN_AROUND.value: skeleton_builder.turn_around,
+            OperatorCharacters.PUSH_STATE.value: skeleton_builder.push_state,
+            OperatorCharacters.POP_STATE.value: skeleton_builder.pop_state
         }
         for i in range(ord("A"), ord("Z")):
             self.operator_set[chr(i)] = skeleton_builder.add_branch
+
+        for i in range(ord("0"), ord("9")):
+            self.operator_set[chr(i)] = skeleton_builder.idle
 
     def map_symbol(self, symbol: str):
         """ Map character to a rule class """

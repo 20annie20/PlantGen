@@ -74,17 +74,17 @@ class SkeletonBuilder:
             r = rotate(self.up, -np.radians(90))
             self.heading = r @ self.heading
             self.left = r @ self.left
-            self.curr_pos += np.array([0.0, -60.0, 0.0])
+            self.curr_pos += np.array([0.0, 0.0, 0.0])
 
     def yaw_left(self):
         """ Yaw left - rotate Y axis """
-        r = rotate(self.up, self.angle)
+        r = rotate(self.up, -self.angle)
         self.heading = r @ self.heading
         self.left = r @ self.left
 
     def yaw_right(self):
         """ Yaw right - rotate Y axis """
-        r = rotate(self.up, -self.angle)
+        r = rotate(self.up, self.angle)
         self.heading = r @ self.heading
         self.left = r @ self.left
 
@@ -124,6 +124,9 @@ class SkeletonBuilder:
         self.positions.append(end_pos.copy())
         self.curr_pos = end_pos
 
+    def idle(self):
+        """ do nothing """
+
     def get_end_pos(self, length) -> ():
         """ Move from current position to the next along the heading direction """
         return self.curr_pos + self.heading * length
@@ -134,6 +137,7 @@ class SkeletonBuilder:
         ax = fig.add_subplot(111, projection="3d")
         positions = np.array(self.positions)
         ax.plot(positions[:, 0], positions[:, 1], positions[:, 2])
+        plt.gca().set_aspect('equal', adjustable='box')
         plt.show()
 
     def push_state(self):
@@ -143,6 +147,7 @@ class SkeletonBuilder:
     def pop_state(self):
         """ pop latest state - location & rotation """
         location, heading, up, left = self.stateStack.pop()
+        self.positions.append(location.copy())
         self.curr_pos = location
         self.heading = heading
         self.up = up

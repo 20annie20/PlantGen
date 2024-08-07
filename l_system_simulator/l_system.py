@@ -43,69 +43,92 @@ class LSystemSimulator:
         context rules
         """
 
-        match_context = True  # if no context or context is right - apply rule
+        left_context = None
+        right_context = None
+
         for condition in rule:
+            # if no context or context is right - apply rule
             if "<" in condition:
-                predecessor_context = self.get_predecessor(split_idx, ignore, ignore_chars)
                 left_cond = condition.split("<")[0]  # take left side of the rule
-                if left_cond != predecessor_context:  # I assumed continuous match for now
-                    match_context = False
+                if left_context is None:
+                    left_context = self.get_left_context(split_idx, ignore, ignore_chars)
+                if len(left_cond) > len(left_context):
+                    continue
+                if left_cond != left_context[-len(left_cond):]:
+                    continue  # context not matched
             if ">" in condition:
-                successor_context = self.get_successor(split_idx, ignore, ignore_chars)
-                right_cond = condition.split("<")[1]
-                if right_cond != successor_context:
-                    match_context = False
+                right_cond = condition.split(">")[1].split("=")[0]
+                right_contexts = list(self.get_right_context(split_idx + 1, ignore, ignore_chars, len(right_cond)))
+                if right_cond not in right_contexts:
+                    continue
+            return condition.split("=")[-1]  # take the rule production outcome
 
-            if match_context:
-                return rule.split("=")[-1]  # take the rule production outcome
-        return ""
+        return self.produced_word[split_idx]
 
-    def get_predecessor(self, split_idx, ignore, ignore_chars):
-        """ Get strict predecessor context of a given char """
+    def get_left_context(self, split_idx, ignore, ignore_chars):
+        """ Get strict left context of a given char """
         stack = [""]
         idx = 0
 
-        predecessor = ""
         for i in range(0, split_idx):
             char = self.produced_word[i]
+            if ignore:
+                if char in ignore_chars:
+                    continue
             if char == "[":
                 idx += 1
-                stack[idx] = ""
+                if idx == len(stack):
+                    stack.append("")
             elif char == "]":
                 stack[idx] = ""
                 idx -= 1
             else:
                 stack[idx] += char
 
-        last = stack[-1]
-        for i in reversed(last):
-            if ignore:
-                if i not in ignore_chars:
-                    return i
-            else:
-                return i
-        return ""
+        last = "".join(stack)
+        return last
 
-    def get_successor(self, split_idx, ignore, ignore_chars):
-        """ Get strict successor context starting from split_idx """
-        brackets = 0
-        successor = ""
+    def get_right_context(self, split_idx, ignore, ignore_chars, size):
+        """ Get strict right contexts starting from split_idx """
+        depth = 0
+        branch_ctxs = []
 
-        idx = split_idx
+        valid_idx = split_idx
         length = len(self.produced_word)
 
-        while brackets > 0 and idx < length:
-            char = self.produced_word[idx]
-            idx += 1
-            if char == "[":
-                brackets += 1
-            elif char == "]":
-                brackets -= 1
-            elif brackets <= 0:
+        if ignore:
+            while valid_idx < length:
+                if self.produced_word[valid_idx] not in ignore_chars:
+                    break
+                valid_idx += 1
+
+        idx = valid_idx
+        if size > 0:
+            while idx < length:
+                char = self.produced_word[idx]
                 if ignore:
-                    if successor not in ignore_chars:
-                        successor = char
+                    if char in ignore_chars:
+                        idx += 1
+                        continue
+
+                if char == "[":
+                    if depth == 0:
+                        branch_ctxs.extend(self.get_right_context(idx+1, ignore, ignore_chars, size-1))
+                    depth += 1
+                elif char == "]":
+                    depth -= 1
+                    if depth < 0:
                         break
-                else:
-                    successor = char
-        return successor
+                elif depth == 0:
+                    if size > 1:
+                        branch_ctxs.extend(self.get_right_context(idx, ignore, ignore_chars, size-1))
+                    break
+                idx += 1
+
+        if branch_ctxs:
+            if self.produced_word[valid_idx] == '[':
+                return branch_ctxs
+            return [self.produced_word[valid_idx] + ctx for ctx in branch_ctxs]
+        elif valid_idx < length:
+            return [self.produced_word[valid_idx]]
+        return []
