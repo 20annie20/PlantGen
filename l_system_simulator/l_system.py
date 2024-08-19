@@ -44,7 +44,6 @@ class LSystemSimulator:
         """
 
         left_context = None
-        right_context = None
 
         for condition in rule:
             # if no context or context is right - apply rule
@@ -68,7 +67,7 @@ class LSystemSimulator:
     def get_left_context(self, split_idx, ignore, ignore_chars):
         """ Get strict left context of a given char """
         stack = [""]
-        idx = 0
+        stack_idx = 0
 
         for i in range(0, split_idx):
             char = self.produced_word[i]
@@ -76,22 +75,23 @@ class LSystemSimulator:
                 if char in ignore_chars:
                     continue
             if char == "[":
-                idx += 1
-                if idx == len(stack):
+                stack_idx += 1
+                if stack_idx == len(stack):
                     stack.append("")
             elif char == "]":
-                stack[idx] = ""
-                idx -= 1
+                stack[stack_idx] = ""
+                stack_idx -= 1
             else:
-                stack[idx] += char
+                stack[stack_idx] += char
 
         last = "".join(stack)
         return last
 
     def get_right_context(self, split_idx, ignore, ignore_chars, size):
         """ Get strict right contexts starting from split_idx """
+        """ Each branch included adds one new context """
         depth = 0
-        branch_ctxs = []
+        branch_ctxs = [""]
 
         valid_idx = split_idx
         length = len(self.produced_word)
@@ -101,6 +101,7 @@ class LSystemSimulator:
                 if self.produced_word[valid_idx] not in ignore_chars:
                     break
                 valid_idx += 1
+
 
         idx = valid_idx
         if size > 0:
@@ -112,23 +113,24 @@ class LSystemSimulator:
                         continue
 
                 if char == "[":
-                    if depth == 0:
-                        branch_ctxs.extend(self.get_right_context(idx+1, ignore, ignore_chars, size-1))
-                    depth += 1
+                    if depth < size:
+                        depth += 1
+                        branch_ctxs.append("")
+                    else:
+                        while depth >= size:
+                            idx += 1
+                            char = self.produced_word[idx]
+                            if char == "]":
+                                depth -= 1
+
                 elif char == "]":
                     depth -= 1
                     if depth < 0:
                         break
-                elif depth == 0:
-                    if size > 1:
-                        branch_ctxs.extend(self.get_right_context(idx, ignore, ignore_chars, size-1))
-                    break
+                else:
+                    if len(branch_ctxs[depth]) < size:
+                        branch_ctxs[depth] += char
                 idx += 1
 
-        if branch_ctxs:
-            if self.produced_word[valid_idx] == '[':
-                return branch_ctxs
-            return [self.produced_word[valid_idx] + ctx for ctx in branch_ctxs]
-        elif valid_idx < length:
-            return [self.produced_word[valid_idx]]
-        return []
+        # scalanie kontekstów w razie dłuższych kontekstow wymagane
+        return branch_ctxs
