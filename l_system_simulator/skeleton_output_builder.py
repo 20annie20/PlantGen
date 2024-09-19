@@ -131,6 +131,10 @@ class SkeletonBuilder:
         """ Move from current position to the next along the heading direction """
         return self.curr_pos + self.heading * length
 
+    def get_curr_pos(self) -> ():
+        """ Return current position """
+        return np.round(self.curr_pos, 3)
+
     def finish(self):
         """ draw the model in matplotlib """
         fig = plt.figure()
