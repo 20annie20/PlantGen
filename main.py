@@ -13,7 +13,7 @@ from l_system_simulator.skeleton_output_builder import SkeletonBuilder
 
 if __name__ == "__main__":
 
-    PRODUCTION_FILE = "rules/context_tree.json"
+    PRODUCTION_FILE = "rules/3d_tree1.json"
 
     with open(os.path.normpath(PRODUCTION_FILE), "r", encoding="utf-8") as file_handle:
         production_rules = json.load(file_handle)

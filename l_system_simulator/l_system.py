@@ -15,6 +15,7 @@ class LSystemSimulator:
         self.rule_list = rule_list
 
     def init_parser(self, parser):
+        """ Assign parser for the method-operator reverted mapping """
         self.parser = parser
 
     @staticmethod
@@ -30,7 +31,13 @@ class LSystemSimulator:
                     if operator in rule_list.keys():
                         applicable_rules = rule_list[operator]
                         rule = random.choice(applicable_rules)
-                        new_word += LSystemSimulator.apply_rule(produced_word, rule, idx, ignore, ignore_chars)
+                        new_word += LSystemSimulator.apply_rule(
+                            produced_word,
+                            rule,
+                            idx,
+                            ignore,
+                            ignore_chars
+                        )
                     else:
                         new_word += operator
                 iterations -= 1
@@ -46,7 +53,12 @@ class LSystemSimulator:
                     if operator in self.rule_list.keys():
                         applicable_rules = self.rule_list[operator]
                         rule = random.choice(applicable_rules)
-                        new_word += self.apply_rule(self.produced_word, rule, idx, ignore, ignore_chars)
+                        new_word += self.apply_rule(
+                            self.produced_word,
+                            rule, idx,
+                            ignore,
+                            ignore_chars
+                        )
                     else:
                         new_word += operator
                 self.iterations -= 1
@@ -75,7 +87,9 @@ class LSystemSimulator:
             if "<" in condition:
                 left_cond = condition.split("<")[0]  # take left side of the rule
                 if left_context is None:
-                    left_context = LSystemSimulator.get_left_context(produced_word, split_idx, ignore, ignore_chars)
+                    left_context = LSystemSimulator.get_left_context(
+                        produced_word, split_idx, ignore, ignore_chars
+                    )
                 if len(left_cond) > len(left_context):
                     continue
                 if left_cond != left_context[-len(left_cond):]:
@@ -83,7 +97,10 @@ class LSystemSimulator:
             if ">" in condition:
                 right_cond = condition.split(">")[1].split("=")[0]
                 right_contexts = list(
-                    LSystemSimulator.get_right_context(produced_word, split_idx + 1, ignore, ignore_chars, len(right_cond)))
+                    LSystemSimulator.get_right_context(
+                        produced_word, split_idx + 1, ignore, ignore_chars, len(right_cond)
+                    )
+                )
                 if right_cond not in right_contexts:
                     continue
             return condition.split("=")[-1]  # take the rule production outcome
@@ -116,8 +133,8 @@ class LSystemSimulator:
 
     @staticmethod
     def get_right_context(produced_word, split_idx, ignore, ignore_chars, size):
-        """ Get strict right contexts starting from split_idx """
-        """ Each branch included adds one new context """
+        """ Get strict right contexts starting from split_idx
+         Each branch included adds one new context """
         depth = 0
         branch_ctxs = [""]
 
