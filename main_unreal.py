@@ -10,6 +10,7 @@ import importlib
 from typing import Tuple
 
 import unreal
+from opt_einsum.paths import branch
 
 import l_system_simulator
 from l_system_simulator.l_system_operator import Parser3D
@@ -56,32 +57,33 @@ def main(load_from_file, file_path, initial_tree, rules_str,
             do_ignore = False
         rules = json.loads(str(rules_str))
     word = LSystemSimulator.produce_word(do_ignore, ignore_chars, initial_tree, rules, iterations)
+    branches = join_branches_for_splines(word, angle, length)
 
     blueprint = create_base_blueprint(package_path=asset_path, asset_name=asset_name)
+    static_mesh: unreal.StaticMesh = load_static_mesh(path='/Engine/BasicShapes/Cylinder')
 
-    spline_component = assign_spline_component(blueprint)
-    spline_component.clear_spline_points(True)
-    for point in range(iterations):
-        spline_component.add_spline_point(
-            unreal.Vector(0, 25*point, 100*point*length),
-            unreal.SplineCoordinateSpace.LOCAL
-        )
+    for branch in branches:
+        spline_component = assign_spline_component(blueprint)
+        spline_component.clear_spline_points(True)
+        for point in range(len(branch)):
+            spline_component.add_spline_point(
+                unreal.Vector(point),
+                unreal.SplineCoordinateSpace.LOCAL
+            )
 
-        location, tangent = spline_component.get_location_and_tangent_at_spline_point(
-            point, unreal.SplineCoordinateSpace.LOCAL
-        )
-        static_component = assign_static_component(blueprint)
-        static_component.set_editor_property(
-            "relative_location", location + unreal.Vector(0.0, 0.0, 50*length)
-        )
-        static_component.set_editor_property(
-            "relative_rotation", tangent.rotator_from_axis_and_angle(90)
-        )
-        static_component.set_editor_property(
-            "relative_scale3d", unreal.Vector(length, length, length)
-        )
+        num_points = spline_component.get_number_of_spline_points()
+        for point in range(num_points - 1):
+            spline_mesh = assign_spline_mesh(blueprint)
 
-    print(word)
+            location_start, tangent_start = spline_component.get_location_and_tangent_at_spline_point(
+                point, unreal.SplineCoordinateSpace.LOCAL
+            )
+            location_end, tangent_end = spline_component.get_location_and_tangent_at_spline_point(
+                point + 1, unreal.SplineCoordinateSpace.LOCAL
+            )
+            spline_mesh.set_start_and_end(location_start, tangent_start, location_end, tangent_end)
+            spline_mesh.set_forward_axis(unreal.SplineMeshAxis.Z)
+            spline_mesh.set_editor_property(name="static_mesh", value=static_mesh)
 
 def assign_static_component(blueprint):
     """ assign static mesh component to the blueprint """
@@ -95,9 +97,23 @@ def assign_static_component(blueprint):
     assert isinstance(static_component, unreal.StaticMeshComponent)
     unreal.log(f'new_sub_object:{static_component}')
 
-    cube_mesh: unreal.StaticMesh = load_static_mesh(path='/Engine/BasicShapes/Cylinder')
-    static_component.set_static_mesh(new_mesh=cube_mesh)
+    static_mesh: unreal.StaticMesh = load_static_mesh(path='/Engine/BasicShapes/Shape_Pipe')
+    static_component.set_static_mesh(new_mesh=static_mesh)
     return static_component
+
+def assign_spline_mesh(blueprint):
+    """ assign spline mesh component to the spline """
+    so_subsystem = unreal.get_engine_subsystem(unreal.SubobjectDataSubsystem)
+    sub_handle, spline_mesh = add_subobject(
+        subsystem=so_subsystem,
+        blueprint=blueprint,
+        new_class=unreal.SplineMeshComponent,
+        name='SplineMesh'
+    )
+    assert isinstance(spline_mesh, unreal.SplineMeshComponent)
+    unreal.log(f'new_sub_object:{spline_mesh}')
+
+    return spline_mesh
 
 def assign_spline_component(blueprint):
     """ assign a Spline component to the blueprint """
@@ -116,7 +132,7 @@ def create_base_blueprint(package_path: str, asset_name: str) -> unreal.Blueprin
     """ create a new asset and save it in the content """
     factory = unreal.BlueprintFactory()
     # this works, the saved blueprint is derived from Actor
-    factory.set_editor_property(name='parent_class', value=unreal.GeneratedDynamicMeshActor)
+    factory.set_editor_property(name='parent_class', value=unreal.StaticMeshActor)
 
     # make the blueprint
     asset_tools: unreal.AssetTools = unreal.AssetToolsHelpers.get_asset_tools()
@@ -147,9 +163,8 @@ def add_subobject(subsystem: unreal.SubobjectDataSubsystem,
             blueprint_context=blueprint))
     if not fail_reason.is_empty():
         raise Exception("ERROR from sub_object_subsystem.add_new_subobject: {fail_reason}")
-
     subsystem.rename_subobject(handle=sub_handle, new_name=unreal.Text(name))
-    # subsystem.attach_subobject(owner_handle=root_data_handle, child_to_add_handle=sub_handle)
+    subsystem.attach_subobject(owner_handle=root_data_handle, child_to_add_handle=sub_handle)
 
     blueprint_func_lib = unreal.SubobjectDataBlueprintFunctionLibrary
     obj: unreal.Object = blueprint_func_lib.get_object(blueprint_func_lib.get_data(sub_handle))
