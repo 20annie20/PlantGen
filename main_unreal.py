@@ -65,9 +65,9 @@ def main(load_from_file, file_path, initial_tree, rules_str,
     for branch in branches:
         spline_component = assign_spline_component(blueprint)
         spline_component.clear_spline_points(True)
-        for point in range(len(branch)):
+        for point in branch:
             spline_component.add_spline_point(
-                unreal.Vector(point),
+                unreal.Vector(point[0], point[2], point[1]),
                 unreal.SplineCoordinateSpace.LOCAL
             )
 
@@ -183,7 +183,7 @@ def join_branches_for_splines(word, angle, length):
     angle = float(angle)
     length = float(length)
 
-    mesh_builder = SkeletonBuilder(angle, length, True)
+    mesh_builder = SkeletonBuilder(angle, length*100, True)
     operator_parser = Parser3D(mesh_builder)
 
     spline_coords = [[tuple(mesh_builder.get_curr_pos())]]  # list of lists of 3D points
@@ -225,6 +225,6 @@ def merge_lists(lists):
                 i += 1
 
         # Append the merged or standalone list to the result
-        merged.append(curr_list)
+        merged.append([curr_list[0], curr_list[-1]])
 
     return merged
