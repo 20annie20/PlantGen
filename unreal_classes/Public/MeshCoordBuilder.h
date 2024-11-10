@@ -1,12 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Tree.h"
 
-/**
- * 
- */
 using namespace UE::Math;
 
 struct Turtle
@@ -19,18 +15,16 @@ struct Turtle
 
 class TREEGENPLUGIN_API MeshBuilder
 {
+protected:
 	float length;
 	float angle;
 	Turtle curr_state;
 	TArray<Turtle> state_stack;
 	TArray<FVector> points;
 
-
-
 public:
 	MeshBuilder();
 	MeshBuilder(float angle, float scale);
-
 	FVector get_curr_pos();
 	void yaw_right();
 	void yaw_left();
@@ -43,4 +37,13 @@ public:
 	void pop_state();
 	void add_branch();
 	void idle();
+};
+
+class ParametricMeshBuilder : public MeshBuilder 
+{
+protected:
+	SpeciesParams speciesParams;
+public:
+	ParametricMeshBuilder(SpeciesParams speciesParams);
+	void CalcBranch(Branch& branch);
 };

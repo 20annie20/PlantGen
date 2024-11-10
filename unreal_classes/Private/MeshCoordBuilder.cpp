@@ -99,3 +99,27 @@ void MeshBuilder::add_branch()
 void MeshBuilder::idle()
 {
 }
+
+ParametricMeshBuilder::ParametricMeshBuilder(SpeciesParams speciesParams) {
+	this->speciesParams = speciesParams;
+	this->length = speciesParams.ILB * 10.0;
+	this->curr_state.current_position = FVector(0.0f);
+	this->curr_state.heading = FVector(0.0f, 0.0f, 1.0f);
+	this->curr_state.up = FVector(0.0f, -1.0f, 0.0f);
+	this->curr_state.left = FVector(1.0f, 0.0f, 0.0f);
+}
+
+void ParametricMeshBuilder::CalcBranch(Branch& branch) {
+	if (branch.parent != NULL) {
+		this->curr_state.current_position = branch.parent->nodes.Last();
+	}
+	else {
+		this->curr_state.current_position = FVector(0.0);
+	}
+
+	for (int idx = 0; idx < branch.nodes_count; idx++) {
+		auto end_pos = this->curr_state.current_position + this->curr_state.heading * this->length;
+		this->points.Add(end_pos);
+		this->curr_state.current_position = end_pos;
+	}
+}

@@ -1,32 +1,38 @@
-#include "Components/InstancedStaticMeshComponent.h"
 #include "Tree.h"
 #include "LSystem.h"
+#include "ParametricSystem.h"
+#include "Components/InstancedStaticMeshComponent.h"
 
+Branch::Branch() {
+	state = ACTIVE;
+	nodes_count = 1;
+	nodes.Add(FVector(0.0));
+	parent = NULL;
+	is_terminal = true;
+	start_width = 50.0; // TODO - get from scaling, default 50 cm wide
+	end_width = 0.0;
+}
+
+Branch::Branch(Branch* parent) {
+	state = ACTIVE;
+	nodes_count = 1;
+	nodes.Add(FVector(parent->nodes.Last()));
+	this->parent = parent;
+	this->parent->is_terminal = false;
+	this->is_terminal = true;
+	this->start_width = this->parent->end_width;
+	end_width = 0.0;
+}
+
+void Branch::AddNode() {
+	nodes_count++;
+}
 
 // Sets default values
 ATree::ATree()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	//InstancedTreeComponent = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("InstancedTreeComponent"));
-	//InstancedTreeComponent->SetupAttachment(GetRootComponent());
-
-	//InstancedLeafComponent = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("InstancedLeafComponent"));
-	//InstancedLeafComponent->SetupAttachment(GetRootComponent());
-
 	GenerateTree();
-}
-
-void ATree::PostInitializeComponents()
-{
-	Super::PostInitializeComponents();
-
-	/*if (!InstancedTreeComponent->GetStaticMesh())
-	{
-		InstancedTreeComponent->SetStaticMesh(TreeStaticMesh);
-		InstancedTreeComponent->SetMaterial(0, UMaterialInstanceDynamic::Create(TreeMaterial, this));
-
-	}*/
 }
 
 void ATree::OnConstruction(const FTransform& Transform)
@@ -35,16 +41,16 @@ void ATree::OnConstruction(const FTransform& Transform)
 	RefreshTree();
 }
 
-
-void ATree::SetAngle(float NewAngle)
+void ATree::SetSpecies(Species NewSpecies)
 {
-	Angle = NewAngle;
+	species = NewSpecies;
 	RefreshTree();
 }
 
-void ATree::SetAxiom(FString NewAxiom)
+/*
+void ATree::SetAngle(float NewAngle)
 {
-	Axiom = NewAxiom;
+	Angle = NewAngle;
 	RefreshTree();
 }
 
@@ -63,12 +69,6 @@ void ATree::SetIterations(int NewIterations)
 		Iterations = 1;
 	}
 	
-	RefreshTree();
-}
-
-void ATree::SetLength(float NewLength)
-{
-	Length = NewLength;
 	RefreshTree();
 }
 
@@ -94,14 +94,15 @@ void ATree::SetLeafSize(float NewLeafSize)
 {
 	LeafSize = NewLeafSize;
 	RefreshTree();
-}
+} */
 
 
 void ATree::GenerateTree()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Generating Splines."));
 
-	FString initial_tree = Axiom;
+	/*FString initial_tree = "X";
+
 	float scale = 1.0f / Iterations;
 
 	TMap<TCHAR, TArray<FString>> rules = {
@@ -111,51 +112,69 @@ void ATree::GenerateTree()
 
 	LSystem simulator = LSystem(initial_tree, rules, Iterations);
 
-	FString word = simulator.produce_word();
+	FString word = simulator.produce_word(); */
 
-	TArray<TArray<FVector>> branches = simulator.join_branches_for_splines(Angle, scale);
+	ParametricSystem simulator = ParametricSystem(species);
+
+	grown_branches = simulator.GrowBranches();
+	splines.Empty();
 
 	int it = 0;
-	for (auto& branch : branches)
+	for (auto& branch : grown_branches)
 	{
 		FName name = FName(FString::FormatAsNumber(it) + "_spline");
 		USplineComponent* spline = (USplineComponent*)GetDefaultSubobjectByName(name);
 		if (spline == NULL){
 			spline = CreateDefaultSubobject<USplineComponent>(name);
 			spline->SetupAttachment(GetRootComponent());
-			splines.Add(spline);
+			
 		}
+		splines.Add({ spline, &branch });
 		spline->ClearSplinePoints();
-
 		it++;
 
-		for (int i = 0; i < branch.Num(); i++) {
-			spline->AddSplineWorldPoint(branch[i]);
+		for (auto& node : branch.nodes) {
+			spline->AddSplineLocalPoint(node);
 		}
 	}
 	PopulateMesh();
 }
 
 void ATree::PopulateMesh() {
+
+	auto longest_edge = 0.0;
+
+	if (TreeStaticMesh != NULL) {
+		TreeStaticMesh->CalculateExtendedBounds();
+		FBox box = TreeStaticMesh->GetBoundingBox();
+		FVector size = box.GetSize();
+		longest_edge = FMath::Max(size.X, size.Y);
+	}
 	
 	for (auto spline : splines) {
-		for (int i = 0; i < spline->GetNumberOfSplinePoints() - 1; i++) {
+		for (int i = 0; i < spline.Key->GetNumberOfSplinePoints() - 1; i++) {
 			FVector start_location, start_tangent, end_location, end_tangent;
 
-			spline->GetLocalLocationAndTangentAtSplinePoint(i, start_location, start_tangent);
-			spline->GetLocalLocationAndTangentAtSplinePoint(i+1, end_location, end_tangent);
+			spline.Key->GetLocalLocationAndTangentAtSplinePoint(i, start_location, start_tangent);
+			spline.Key->GetLocalLocationAndTangentAtSplinePoint(i+1, end_location, end_tangent);
 
-			FName name = FName(spline->GetFName().ToString() + "_" + FString::FormatAsNumber(i) + "_smc");
+			FName name = FName(spline.Key->GetFName().ToString() + "_" + FString::FormatAsNumber(i) + "_smc");
 			USplineMeshComponent* smc = (USplineMeshComponent*)GetDefaultSubobjectByName(name);
 
 			if (smc == NULL) {
 				smc = CreateDefaultSubobject<USplineMeshComponent>(name);
-				smc->AttachToComponent(spline, FAttachmentTransformRules::KeepRelativeTransform);
+				smc->AttachToComponent(spline.Key, FAttachmentTransformRules::KeepRelativeTransform);
 				smc->SetForwardAxis(ESplineMeshAxis::Type::Z);
 			}
 			if (TreeStaticMesh != NULL) {
 				smc->SetStaticMesh(TreeStaticMesh);
 				smc->SetStartAndEnd(start_location, start_tangent, end_location, end_tangent);
+				
+				auto start_scale = spline.Value->start_width / longest_edge;
+				auto end_scale = spline.Value->end_width / longest_edge;
+				
+				smc->SetStartScale(TVector2(start_scale));
+				smc->SetEndScale(TVector2(end_scale));
 			}
 			
 		}

@@ -29,29 +29,50 @@ enum Species
 };
 
 struct SpeciesParams {
-	int AAV;  // apical angle variance
-	float GR; // growth rate
-	float ILB; // internode length base
+	int NLB;	// number of lateral buds
+	int AAV;	// apical angle variance
+	int BAM;	// branching angle mean
+	int BAV;	// branching angle variance
+	int RAM;	// roll angle mean
+	int RAV;	// roll angle variance
+
+	float GR;	// growth rate
+	float ILB;	// internode length base
 };
 
 const TMap<Species, SpeciesParams> speciesTable = {
 	{
 		Species::ACACIA, {
+			2,			// NLB
 			2,			// AAV
+			20,			// BAM
+			5,			// BAV
+			113,		// RAM
+			13,			// RAV
 			1.5,		// GR
 			0.92		// ILB
 		}
 	},
 	{
 		Species::APPLE, {
+			2,			// NLB
 			20,			// AAV
+			45,			// BAM
+			2,			// BAV
+			91,			// RAM
+			1,			// RAV
 			2.98,		// GR
 			0.55		// ILB
 		}
 	},
 	{
 		Species::WILLOW, {
+			2,			// NLB
 			12,			// AAV
+			43,			// BAM
+			3,			// BAV
+			80,			// RAM
+			4,			// RAV
 			2.3,		// GR
 			0.8			// ILB
 
@@ -59,14 +80,24 @@ const TMap<Species, SpeciesParams> speciesTable = {
 	},
 	{
 		Species::MAPLE, {
+			2,			// NLB
 			2,			// AAV
+			30,			// BAM
+			5,			// BAV
+			130,		// RAM
+			30,			// RAV
 			2.3,		// GR
 			0.8			// ILB
 		}
 	},
 	{
 		Species::BIRCH, {
+			2,			// NLB
 			5,			// AAV
+			30,			// BAM
+			5,			// BAV
+			130,			// RAM
+			30,			// RAV
 			4.25,		// GR
 			0.93		// ILB
 		}
@@ -74,23 +105,48 @@ const TMap<Species, SpeciesParams> speciesTable = {
 	},
 	{
 		Species::OAK, {
+			3,			// NLB
 			20,			// AAV
+			29,			// BAM
+			2,			// BAV
+			91,			// RAM
+			1,			// RAV
 			3,			// GR
 			1			// ILB
 		}
 	},
 	{
 		Species::PINE, {
+			3,			// NLB
 			0,			// AAV
+			80,			// BAM
+			4,			// BAV
+			10,			// RAM
+			30,			// RAV
 			3.26,		// GR
 			0.4			// ILB
 		}
 	}
 };
 
+enum BranchState {
+	ACTIVE = 1,
+	STALE = 0
+};
+
 class Branch {
-	TArray<FVector> nodes = {FVector(0.0)};
-}
+public:
+	TArray<FVector> nodes;
+	int nodes_count;
+	BranchState state;
+	Branch* parent;
+	bool is_terminal;
+	float start_width, end_width;
+
+	Branch();
+	Branch(Branch* parent);
+	void AddNode();
+};
 
 UCLASS()
 class TREEGENPLUGIN_API ATree : public AActor
@@ -100,34 +156,8 @@ class TREEGENPLUGIN_API ATree : public AActor
 public:	
 	ATree();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection, meta = (BlueprintSetter = "SetAxiom"))
-	FString Axiom = "X";
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection, meta = (BlueprintSetter = "SetIterations"))
-	int Iterations = 4;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection, meta = (BlueprintSetter = "SetAngle"))
-	float Angle = 22.5f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection, meta = (BlueprintSetter = "SetRadius"))
-	float Radius = 1.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection, meta = (BlueprintSetter = "SetLength"))
-	float Length = 1.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection,
-		meta = (BlueprintSetter = "SetBranchRadiusReduction"))
-	float BranchRadiusReduction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection, meta = (BlueprintSetter = "SetMinBranchRadius"))
-	float MinBranchRadius;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection,
-		meta = (BlueprintSetter = "SetBranchLengthRelativeToParent"))
-	float BranchLengthRelativeToParent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection, meta = (BlueprintSetter = "SetLeafSize"))
-	float LeafSize;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection, meta = (BlueprintSetter = "SetSpecies"))
+	TEnumAsByte<Species> species;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tree)
 	UMaterial* TreeMaterial;
@@ -145,34 +175,9 @@ public:
 	int CurrentChunk = 0;
 	
 	UFUNCTION(BlueprintSetter)
-	void SetAngle(float NewAngle);
-
-	UFUNCTION(BlueprintSetter)
-	void SetAxiom(FString NewAxiom);
-
-	UFUNCTION(BlueprintSetter)
-	void SetIterations(int NewIterations);
-
-	UFUNCTION(BlueprintSetter)
-	void SetRadius(float NewRadius);
-
-	UFUNCTION(BlueprintSetter)
-	void SetLength(float NewLength);
-
-	UFUNCTION(BlueprintSetter)
-	void SetBranchRadiusReduction(float NewBranchRadiusReduction);
-
-	UFUNCTION(BlueprintSetter)
-	void SetMinBranchRadius(float NewMinBranchRadius);
-
-	UFUNCTION(BlueprintSetter)
-	void SetBranchLengthRelativeToParent(float NewBranchLengthRelativeToParent);
-
-	UFUNCTION(BlueprintSetter)
-	void SetLeafSize(float NewLeafSize);
+	void SetSpecies(Species NewAngle);
 
 protected:
-	virtual void PostInitializeComponents() override;
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
@@ -187,6 +192,8 @@ protected:
 	//FInstanceData CreateInstanceData(const FTransform& Transform, TEnumAsByte<EInstanceType> InstanceType);
 
 private:
-	TArray<USplineComponent*> splines;
+	TMap<USplineComponent*, Branch*> splines;
+
+	TArray<Branch> grown_branches;
 	//FTransform TransformToGlobal(const FTransform& Parent, const FTransform& Local);
 };

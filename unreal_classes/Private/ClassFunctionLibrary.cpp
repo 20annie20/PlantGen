@@ -9,6 +9,7 @@ void UClassFunctionLibrary::GetTreeSplineCoordinates(AActor* tree)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Generating Splines."));
 
+	// TODO - define species enums with params
 	FString initial_tree = "X";
 	float angle = 45.0;
 	int iterations = 5;
