@@ -6,7 +6,7 @@
 Branch::Branch() {
 	state = ACTIVE;
 	nodes_count = 1;
-	nodes.Add(FVector(0.0));
+	nodes.Add({ FVector(0.0), FVector(0.0, 0.0, 1.0) });
 	parent = NULL;
 	is_terminal = true;
 	start_width = 50.0; // TODO - get from scaling, default 50 cm wide
@@ -16,7 +16,7 @@ Branch::Branch() {
 Branch::Branch(Branch* parent) {
 	state = ACTIVE;
 	nodes_count = 1;
-	nodes.Add(FVector(parent->nodes.Last()));
+	nodes.Add(Node(parent->nodes.Last()));
 	this->parent = parent;
 	this->parent->is_terminal = false;
 	this->is_terminal = true;
@@ -134,7 +134,7 @@ void ATree::GenerateTree()
 		it++;
 
 		for (auto& node : branch.nodes) {
-			spline->AddSplineLocalPoint(node);
+			spline->AddSplineLocalPoint(node.coordinates);
 		}
 	}
 	PopulateMesh();
@@ -152,6 +152,13 @@ void ATree::PopulateMesh() {
 	}
 	
 	for (auto spline : splines) {
+
+		auto start_branch_scale = spline.Value->start_width / longest_edge;
+		auto end_branch_scale = spline.Value->end_width / longest_edge;
+		auto start_segment_scale = start_branch_scale;
+		auto scaler = (start_branch_scale - end_branch_scale) / spline.Key->GetNumberOfSplinePoints();
+		auto end_segment_scale = start_segment_scale - scaler;
+
 		for (int i = 0; i < spline.Key->GetNumberOfSplinePoints() - 1; i++) {
 			FVector start_location, start_tangent, end_location, end_tangent;
 
@@ -169,12 +176,10 @@ void ATree::PopulateMesh() {
 			if (TreeStaticMesh != NULL) {
 				smc->SetStaticMesh(TreeStaticMesh);
 				smc->SetStartAndEnd(start_location, start_tangent, end_location, end_tangent);
-				
-				auto start_scale = spline.Value->start_width / longest_edge;
-				auto end_scale = spline.Value->end_width / longest_edge;
-				
-				smc->SetStartScale(TVector2(start_scale));
-				smc->SetEndScale(TVector2(end_scale));
+				smc->SetStartScale(TVector2(start_segment_scale));
+				smc->SetEndScale(TVector2(end_segment_scale));
+				start_segment_scale -= scaler;
+				end_segment_scale -= scaler;
 			}
 			
 		}
@@ -183,10 +188,7 @@ void ATree::PopulateMesh() {
 }
 
 void ATree::RefreshTree()
-{
-	//InstancedTreeComponent->ClearInstances();
-	//InstancedLeafComponent->ClearInstances();
-	
+{	
 	GenerateTree();
 }
 

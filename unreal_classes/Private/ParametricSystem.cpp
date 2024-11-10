@@ -44,7 +44,6 @@ void ParametricSystem::CalculateCoords() {
 
 	for (int i = 0; i < branches.Num(); i++) {
 		mb.CalcBranch(branches[i]);
-		branches[i].nodes.Add({mb.get_curr_pos()});
 	}
 }
 
@@ -59,9 +58,9 @@ TArray<Branch> ParametricSystem::MergeLists()
 
 		int idx = 0;
 		while (idx < branches.Num()) {
-			auto end_node = current_branch.nodes.Last();
+			auto end_node = current_branch.nodes.Last().coordinates;
 
-			if (FVector::PointsAreSame(end_node, branches[idx].nodes[0])) {
+			if (FVector::PointsAreSame(end_node, branches[idx].nodes[0].coordinates)) {
 
 				current_branch.nodes.Append(branches[idx].nodes.GetData() + 1, branches[idx].nodes_count);
 				branches.RemoveAt(idx);

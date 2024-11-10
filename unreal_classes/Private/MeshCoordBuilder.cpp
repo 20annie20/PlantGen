@@ -2,7 +2,10 @@
 
 
 #include "MeshCoordBuilder.h"
+#include "Math/Vector.h"
+#include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetMathLibrary.h"
+#include <random>
 
 MeshBuilder::MeshBuilder()
 {
@@ -102,7 +105,7 @@ void MeshBuilder::idle()
 
 ParametricMeshBuilder::ParametricMeshBuilder(SpeciesParams speciesParams) {
 	this->speciesParams = speciesParams;
-	this->length = speciesParams.ILB * 10.0;
+	this->length = speciesParams.ILB * 100.0;
 	this->curr_state.current_position = FVector(0.0f);
 	this->curr_state.heading = FVector(0.0f, 0.0f, 1.0f);
 	this->curr_state.up = FVector(0.0f, -1.0f, 0.0f);
@@ -111,15 +114,29 @@ ParametricMeshBuilder::ParametricMeshBuilder(SpeciesParams speciesParams) {
 
 void ParametricMeshBuilder::CalcBranch(Branch& branch) {
 	if (branch.parent != NULL) {
-		this->curr_state.current_position = branch.parent->nodes.Last();
+		this->curr_state.current_position = branch.parent->nodes.Last().coordinates;
+		this->curr_state.heading = branch.parent->nodes.Last().heading;
 	}
 	else {
 		this->curr_state.current_position = FVector(0.0);
+		this->curr_state.heading = FVector(0.0, 0.0, 1.0);
 	}
 
 	for (int idx = 0; idx < branch.nodes_count; idx++) {
 		auto end_pos = this->curr_state.current_position + this->curr_state.heading * this->length;
-		this->points.Add(end_pos);
+		branch.nodes.Add(Node{ curr_state.current_position, curr_state.heading });
+
+		FVector2D polar_heading = this->curr_state.heading.UnitCartesianToSpherical();
+		
+		std::random_device rd{};
+		std::mt19937 gen{ rd() };
+		std::normal_distribution d{(float)speciesParams.AAV / 2, 0.1f};
+
+		polar_heading.X = d(gen);
+		polar_heading.Y = FMath::RandRange(0.0, 2*3.14);
 		this->curr_state.current_position = end_pos;
+		auto var = polar_heading.SphericalToUnitCartesian();
+		this->curr_state.heading = this->curr_state.heading + polar_heading.SphericalToUnitCartesian();
+		this->curr_state.heading.Normalize();
 	}
 }

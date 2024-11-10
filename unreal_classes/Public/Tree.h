@@ -134,9 +134,14 @@ enum BranchState {
 	STALE = 0
 };
 
+struct Node {
+	FVector coordinates;
+	FVector heading;
+};
+
 class Branch {
 public:
-	TArray<FVector> nodes;
+	TArray<Node> nodes;
 	int nodes_count;
 	BranchState state;
 	Branch* parent;
