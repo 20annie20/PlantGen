@@ -43,7 +43,8 @@ class ParametricMeshBuilder : public MeshBuilder
 {
 protected:
 	SpeciesParams speciesParams;
+	int tree_age;
 public:
-	ParametricMeshBuilder(SpeciesParams speciesParams);
-	void CalcBranch(Branch& branch);
+	ParametricMeshBuilder(SpeciesParams speciesParams, int tree_age);
+	void CalcBranch(Branch& branch, Branch& parent);
 };

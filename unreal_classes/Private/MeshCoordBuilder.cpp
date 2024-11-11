@@ -103,40 +103,51 @@ void MeshBuilder::idle()
 {
 }
 
-ParametricMeshBuilder::ParametricMeshBuilder(SpeciesParams speciesParams) {
+ParametricMeshBuilder::ParametricMeshBuilder(SpeciesParams speciesParams, int tree_age) {
 	this->speciesParams = speciesParams;
-	this->length = speciesParams.ILB * 100.0;
+	this->length = speciesParams.ILB * 10.0f;
 	this->curr_state.current_position = FVector(0.0f);
 	this->curr_state.heading = FVector(0.0f, 0.0f, 1.0f);
 	this->curr_state.up = FVector(0.0f, -1.0f, 0.0f);
 	this->curr_state.left = FVector(1.0f, 0.0f, 0.0f);
+	this->tree_age = tree_age;
 }
 
-void ParametricMeshBuilder::CalcBranch(Branch& branch) {
+void ParametricMeshBuilder::CalcBranch(Branch& branch, Branch& parent) {
+	std::random_device rd{};
+	std::mt19937 gen{ rd() };
+
 	if (branch.parent != NULL) {
-		this->curr_state.current_position = branch.parent->nodes.Last().coordinates;
-		this->curr_state.heading = branch.parent->nodes.Last().heading;
+		this->curr_state.current_position = parent.nodes[branch.parent_node_idx].coordinates;
+		this->curr_state.heading = parent.nodes[branch.parent_node_idx].heading;
+		// modify heading by adding species lateral bud rotation and bend
+
+		std::normal_distribution bd{ (float)speciesParams.BAM, (float)speciesParams.BAV }; // bend
+		std::normal_distribution rotd{ (float)speciesParams.RAM, (float)speciesParams.RAV }; // rotate
+		this->angle = bd(gen);
+		this->roll_left();
+
 	}
 	else {
 		this->curr_state.current_position = FVector(0.0);
 		this->curr_state.heading = FVector(0.0, 0.0, 1.0);
 	}
 
-	for (int idx = 0; idx < branch.nodes_count; idx++) {
+	for (int idx = 0; idx < branch.nodes.Num(); idx++) {
 		auto end_pos = this->curr_state.current_position + this->curr_state.heading * this->length;
-		branch.nodes.Add(Node{ curr_state.current_position, curr_state.heading });
+		branch.nodes[idx].coordinates = curr_state.current_position;
+		branch.nodes[idx].heading = curr_state.heading;
 
-		FVector2D polar_heading = this->curr_state.heading.UnitCartesianToSpherical();
+		// apical angle variance
+		FVector2D polar_heading;
 		
-		std::random_device rd{};
-		std::mt19937 gen{ rd() };
-		std::normal_distribution d{(float)speciesParams.AAV / 2, 0.1f};
+		std::normal_distribution d{(float)speciesParams.AAV};
 
 		polar_heading.X = d(gen);
 		polar_heading.Y = FMath::RandRange(0.0, 2*3.14);
 		this->curr_state.current_position = end_pos;
 		auto var = polar_heading.SphericalToUnitCartesian();
-		this->curr_state.heading = this->curr_state.heading + polar_heading.SphericalToUnitCartesian();
+		this->curr_state.heading = this->curr_state.heading + 0.3 * var;
 		this->curr_state.heading.Normalize();
 	}
 }

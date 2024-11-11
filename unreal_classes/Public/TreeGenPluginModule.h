@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(TreeGen, Log, All);
+
 /**
  * This is the module definition for the editor mode. You can implement custom functionality
  * as your plugin module starts up and shuts down. See IModuleInterface for more extensibility options.

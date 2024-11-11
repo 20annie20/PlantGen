@@ -36,6 +36,11 @@ struct SpeciesParams {
 	int RAM;	// roll angle mean
 	int RAV;	// roll angle variance
 
+	float AKP;	// apical bud kill probability
+	float LKP;	// lateral bud kill probability
+
+	int MBA;	// max bud age
+
 	float GR;	// growth rate
 	float ILB;	// internode length base
 };
@@ -49,6 +54,9 @@ const TMap<Species, SpeciesParams> speciesTable = {
 			5,			// BAV
 			113,		// RAM
 			13,			// RAV
+			0.9,		// AKP
+			0.006,		// LKP
+			10,			// MBA
 			1.5,		// GR
 			0.92		// ILB
 		}
@@ -61,6 +69,9 @@ const TMap<Species, SpeciesParams> speciesTable = {
 			2,			// BAV
 			91,			// RAM
 			1,			// RAV
+			0,			// AKP
+			0.21,		// LKP
+			20,			// MBA
 			2.98,		// GR
 			0.55		// ILB
 		}
@@ -73,6 +84,9 @@ const TMap<Species, SpeciesParams> speciesTable = {
 			3,			// BAV
 			80,			// RAM
 			4,			// RAV
+			0,			// AKP
+			0.21,		// LKP
+			8,			// MBA
 			2.3,		// GR
 			0.8			// ILB
 
@@ -86,6 +100,9 @@ const TMap<Species, SpeciesParams> speciesTable = {
 			5,			// BAV
 			130,		// RAM
 			30,			// RAV
+			0,			// AKP
+			0.01,		// LKP
+			8,			// MBA
 			2.3,		// GR
 			0.8			// ILB
 		}
@@ -96,8 +113,11 @@ const TMap<Species, SpeciesParams> speciesTable = {
 			5,			// AAV
 			30,			// BAM
 			5,			// BAV
-			130,			// RAM
+			130,		// RAM
 			30,			// RAV
+			0,			// AKP
+			0.01,		// LKP
+			8,			// MBA
 			4.25,		// GR
 			0.93		// ILB
 		}
@@ -111,6 +131,9 @@ const TMap<Species, SpeciesParams> speciesTable = {
 			2,			// BAV
 			91,			// RAM
 			1,			// RAV
+			0,			// AKP
+			0.21,		// LKP
+			20,			// MBA
 			3,			// GR
 			1			// ILB
 		}
@@ -123,6 +146,9 @@ const TMap<Species, SpeciesParams> speciesTable = {
 			4,			// BAV
 			10,			// RAM
 			30,			// RAV
+			0,			// AKP
+			0.015,		// LKP
+			10,			// MBA
 			3.26,		// GR
 			0.4			// ILB
 		}
@@ -136,21 +162,22 @@ enum BranchState {
 
 struct Node {
 	FVector coordinates;
-	FVector heading;
+	FVector heading; // roll and bend always calculated per branch creation based on current heading
+	int age; // all buds of the node are same age
+	TArray<bool> buds;
 };
 
 class Branch {
 public:
 	TArray<Node> nodes;
-	int nodes_count;
 	BranchState state;
 	Branch* parent;
-	bool is_terminal;
 	float start_width, end_width;
-
+	int parent_node_idx;
+	int parent_idx;
 	Branch();
-	Branch(Branch* parent);
-	void AddNode();
+	Branch(Branch* parent, int parent_idx);
+	void AddNode(const int numBuds);
 };
 
 UCLASS()
@@ -160,9 +187,6 @@ class TREEGENPLUGIN_API ATree : public AActor
 	
 public:	
 	ATree();
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Selection, meta = (BlueprintSetter = "SetSpecies"))
-	TEnumAsByte<Species> species;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tree)
 	UMaterial* TreeMaterial;
@@ -178,9 +202,7 @@ public:
 
 	int ChunkSize = 100;
 	int CurrentChunk = 0;
-	
-	UFUNCTION(BlueprintSetter)
-	void SetSpecies(Species NewAngle);
+	Species species;
 
 protected:
 

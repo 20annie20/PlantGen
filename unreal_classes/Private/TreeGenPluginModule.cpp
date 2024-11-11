@@ -3,6 +3,8 @@
 #include "TreeGenPluginModule.h"
 #include "TreeGenPluginEditorModeCommands.h"
 
+DEFINE_LOG_CATEGORY(TreeGen)
+
 #define LOCTEXT_NAMESPACE "TreeGenPluginModule"
 
 void FTreeGenPluginModule::StartupModule()
