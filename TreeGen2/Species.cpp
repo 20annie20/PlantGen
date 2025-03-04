@@ -21,8 +21,15 @@ Species::Species(Species_ID newId)
 		this->internodeBaseLength = 1.02f;
 		this->internodeLengthAgeFactor = 0.97f;
 		this->apicalAngleVariance = 38;
+
+		this->bendingAngleMean = 38;
+		this->bendingAngleVariance = 2;
+		this->rollAngleMean = 91;
+		this->rollAngleVariance = 1;
+
 		this->apicalExtinctionRate = 0.0f;
 		this->lateralExtinctionRate = 0.21f;
+		this->numOfLateralBuds = 4;
 		this->apicalLightFactor = 0.39;
 		this->lateralLightFactor = 1.13;
 		this->apicalDominanceBase = 3.13f;

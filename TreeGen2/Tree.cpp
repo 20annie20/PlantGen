@@ -10,7 +10,8 @@ ATree::ATree()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	simulator = ParametricSimulator(species_id);
+	auto world = GetWorld();
+	simulator = ParametricSimulator(species_id, world);
 	GenerateTree();
 }
 
@@ -58,7 +59,6 @@ void ATree::GenerateTree()
 	auto initial_branch = Branch();
 	TArray<Branch> branches = { initial_branch };
 	State state = { branches };
-
 	states.Add(state);
 }
 
@@ -86,7 +86,7 @@ void ATree::RefreshMesh(const State& state) {
 			int32 AddIdx = SplineComponent->GetNumberOfSplinePoints();
 			SplineComponent->AddSplinePointAtIndex(point, AddIdx, ESplineCoordinateSpace::Local);
 
-			FVector start_location, start_tangent, end_location, end_tangent;
+			FVector start_location, start_tangent;
 
 			SplineComponent->GetLocalLocationAndTangentAtSplinePoint(n_idx, start_location, start_tangent);
 
@@ -101,7 +101,7 @@ void ATree::RefreshMesh(const State& state) {
 				smc->ComponentTags.Add(TEXT("SMC"));
 
 				// TODO WA the end_tangent problem && clean the meshes from the smcs on the state restore 
-				smc->SetStartAndEnd(start_location, start_tangent, state.branches[idx].nodes[n_idx+1].coordinates, start_tangent);
+				smc->SetStartAndEnd(state.branches[idx].nodes[n_idx].coordinates, start_tangent, state.branches[idx].nodes[n_idx+1].coordinates, start_tangent);
 				if (TreeStaticMesh) {
 					smc->SetStaticMesh(TreeStaticMesh);
 				}

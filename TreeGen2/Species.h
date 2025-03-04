@@ -27,13 +27,19 @@ public:
 	float internodeBaseLength;		// IBL
 	float internodeLengthAgeFactor;	// IL_AF
 	int	  apicalAngleVariance;		// AAV
+
+	int	  bendingAngleMean;		// BAM
+	int	  bendingAngleVariance;	// BAV
+	int	  rollAngleMean;			// RAM
+	int	  rollAngleVariance;		// RAV
+	
 	float apicalExtinctionRate;		// AB_D
 	float lateralExtinctionRate;	// LB_D
 	int	  numOfLateralBuds;			// NLB
 	float apicalLightFactor;		// LF_A
 	float lateralLightFactor;		// LF_L
 	float apicalDominanceBase;		// AD_BF
-	float apicalDomincanceDistance;	// AD_DF
+	float apicalDominanceDistance;	// AD_DF
 	float apicalDominanceAge;		// AD_AF
 
 	Species();
