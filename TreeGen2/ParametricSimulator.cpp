@@ -64,8 +64,14 @@ State ParametricSimulator::GrowTree(const State& state, int age, bool useSDF)
 
 			// lateral shoot growth with probability
 			int addedBranches = 0;
+			// TODO - should it be considered separately per bud???
+			bool growLateral = false;
+			if (newState.branches[idx].nodes[node_idx].numLatBuds > 0) {
+				growLateral = checkLateralGrowth(newState.branches[idx].nodes[node_idx].coordinates, state, age);
+			}
+			
   			for (int bud_idx = 0; bud_idx < newState.branches[idx].nodes[node_idx].numLatBuds; bud_idx++) {
-				if (checkLateralGrowth(newState.branches[idx].nodes[node_idx].coordinates)) {
+				if (growLateral) {
 					
 					auto rollAngle = randAngle(this->species.rollAngleMean, this->species.rollAngleVariance);
 					auto bendAngle = randAngle(this->species.bendingAngleMean, this->species.bendingAngleVariance);
@@ -153,14 +159,15 @@ TArray<Node> ParametricSimulator::CalculateNextBuds(const Node previous, const i
 		auto newNode = Node(coords + current_heading * shootLength, current_heading, true, previous.levelOfBranch, species.numOfLateralBuds);
 		coords = newNode.coordinates;
 		this->clusters.Add(coords);
-		DrawDebugSphere(
+
+		/*DrawDebugSphere(
 			world,
 			coords,
 			CLUSTER_RADIUS,
-			4,
+			6,
 			FColor(0, 0, 255),
 			true
-		);
+		);*/
 		nodes.Add(newNode);
 	}
 	return nodes;
@@ -175,67 +182,153 @@ bool ParametricSimulator::checkState(const float probabilityOfDeath) {
 bool ParametricSimulator::checkApicalGrowth(FVector coords) {
 	float illumination = computeIllumination(coords);
 
-	auto prob = checkState(FMath::Pow(illumination, species.apicalLightFactor));
+	auto doesGrow = checkState(FMath::Pow(illumination, species.apicalLightFactor));
 
-	// TODO return prob
-	return illumination > 0.0;
+	return doesGrow;
 }
 
-bool ParametricSimulator::checkLateralGrowth(FVector coords) {
+bool ParametricSimulator::checkLateralGrowth(const FVector coords, const State& state, const int age) {
 	
 	float illumination = computeIllumination(coords);
-
-	// TODO sum for each bud (b_j) above given (b_i):
-	// delta_j * ad_bf * FMath::Pow(ad_af, age) * FMath::Pow(ad_df, branch_wise_distance between b_i and b_j)
 	float sum = 0.0f;
+
+	// TODO compute distance between buds
+	float distance = 0.0f;
+	for (int i = 0; i < state.branches.Num(); i++) {
+		// if branch starts above coords - this means it is a flushed bud
+		if (state.branches[i].nodes[0].coordinates.Z > coords.Z) { // skip branches that start below or the same point
+			sum += species.apicalDominanceBase * FMath::Pow(species.apicalDominanceAge, age) * FMath::Pow(species.apicalDominanceDistance, distance);
+		}
+	}
 
 	float exponential = FMath::Exp(-sum);
 
-	auto prob = checkState(FMath::Pow(illumination, species.lateralLightFactor) * exponential);
+	auto doesGrow = checkState(FMath::Pow(illumination, species.lateralLightFactor) * exponential);
 
-	// TODO return prob
-	return illumination > 0.0;
+	return doesGrow;
 }
 
 float ParametricSimulator::computeIllumination(FVector coords) {
-	int rayDensity = 8;
+	int rayDensity = 4;
 	auto heading0 = FVector(1, 0, 0);
 	auto heading45 = Bend(heading0, UKismetMathLibrary::DegreesToRadians(45));
 	auto heading80 = Bend(heading0, UKismetMathLibrary::DegreesToRadians(80));
 
 	FVector rayHeading0, rayHeading45, rayHeading80;
+	int miss = 0;
 	for (int i = 0; i < rayDensity; i++) {
 		auto angle = float(i) * ( 2 * PI / rayDensity);
 
+		// TODO - fix repetition when im not so lazy
 		rayHeading0 = Roll(heading0, angle);
 		rayHeading45 = Roll(heading45, angle);
 		rayHeading80 = Roll(heading80, angle);
-		/*
-		DrawDebugLine(
-			world,
-			coords,
-			coords + (rayHeading0 * 100),
-			FColor(255, 255, 0),
-			true
-		);
-		DrawDebugLine(
-			world,
-			coords,
-			coords + (rayHeading45 * 100),
-			FColor(255, 255, 0),
-			true
-		);
-		DrawDebugLine(
-			world,
-			coords,
-			coords + (rayHeading80 * 100),
-			FColor(255, 255, 0),
-			true
-		);
-		*/
+
+		if (traceRayMiss(coords, rayHeading0)) {
+			miss++;
+			/*DrawDebugLine(
+				world,
+				coords,
+				coords + (rayHeading0 * 20),
+				FColor(255, 0, 255),
+				true
+			);*/
+		}
+		else {
+			/*DrawDebugLine(
+				world,
+				coords,
+				coords + (rayHeading0 * 20),
+				FColor(255, 255, 0),
+				true
+			);*/
+		}
+
+		if (traceRayMiss(coords, rayHeading45)) {
+			miss++;
+			/*DrawDebugLine(
+				world,
+				coords,
+				coords + (rayHeading45 * 20),
+				FColor(255, 0, 255),
+				true
+			);*/
+		}
+		else {
+			/*DrawDebugLine(
+				world,
+				coords,
+				coords + (rayHeading45 * 20),
+				FColor(255, 255, 0),
+				true
+			);*/
+		}
+
+		if (traceRayMiss(coords, rayHeading80)) {
+			miss++;
+			/*DrawDebugLine(
+				world,
+				coords,
+				coords + (rayHeading80 * 20),
+				FColor(255, 0, 255),
+				true
+			);*/
+			
+		}
+		else {
+			/*DrawDebugLine(
+				world,
+				coords,
+				coords + (rayHeading80 * 20),
+				FColor(255, 255, 0),
+				true
+			);*/
+		}
 	}
 
-	return 1.0f;
+	return  float(miss) / (rayDensity * 3);
+}
+
+float ParametricSimulator::sdSphere(FVector p) {
+	return p.Length() - CLUSTER_RADIUS;
+};
+
+bool ParametricSimulator::raymarchHit(FVector rayOrigin, FVector direction, FVector sphereCenter) {
+
+	// TODO - add BVH
+	float dO = 0.0;
+	auto MAX_STEPS = 1000;
+	auto MAX_DIST = 1000.0;
+	auto SURFACE_DIST = 0.01f;
+
+	for (int i = 0; i < MAX_STEPS; i++) {
+		auto p = rayOrigin + direction * dO;
+		float dS = sdSphere(p - sphereCenter);
+
+		dO += dS;
+
+		if (dS < SURFACE_DIST) {
+			return true;
+		}
+		if (dO > MAX_DIST) {
+			return false;
+		}
+	}
+	return false;
+}
+
+bool ParametricSimulator::traceRayMiss(const FVector& coords, const FVector& direction) {
+	for (int i = 0; i < clusters.Num(); i++)
+	{
+		if (clusters[i].Z < coords.Z || clusters[i].Equals(coords)) { // skip clusters that are below or the same point
+			continue;
+		}
+
+		if (raymarchHit(coords, direction, clusters[i]))
+			return false;
+	}
+
+	return true;
 }
 
 float ParametricSimulator::randAngle(const int angleMean, const int angleVariance) {

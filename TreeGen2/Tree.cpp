@@ -135,8 +135,9 @@ void ATree::ClearTree() {
 
 	states.Empty();
 	age = 0;
+	simulator.clusters.Empty();
 }
-
+ 
 void ATree::AssignTreeMaterial() {
 	if (TreeMaterial) {
 		TSet comps = this->GetComponents();
