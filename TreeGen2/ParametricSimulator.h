@@ -23,7 +23,7 @@ class TREEGEN2_API ParametricSimulator
 	TArray<Node> CalculateNextBuds(const Node last_node, const int age);
 	bool checkState(const float probabilityOfDeath);
 	bool checkApicalGrowth(FVector coords);
-	bool checkLateralGrowth(const FVector coords, const State& state, const int age);
+	bool checkLateralGrowth(const FVector coords, const State& state, const int age, const int level);
 	float computeIllumination(FVector coords);
 	bool traceRayMiss(const FVector& coords, const FVector& direction);
 	float randAngle(const int angleMean, const int angleVariance);

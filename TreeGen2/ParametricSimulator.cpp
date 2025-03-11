@@ -3,13 +3,14 @@
 
 #include "ParametricSimulator.h"
 #include "Tree.h"
+#include "TreeGen2.h"
 #include <random>
 #include "Kismet/KismetMathLibrary.h"
 
 #include "DrawDebugHelpers.h"   // Include the DrawDebugHelpers header
 
-#define CLUSTER_RADIUS 20.0F
-#define NODE_SCALE 10.0F
+#define CLUSTER_RADIUS 10.0F
+#define NODE_SCALE 40.0F
 
 std::random_device rd{};
 std::mt19937 gen{ rd() };
@@ -35,92 +36,89 @@ ParametricSimulator::~ParametricSimulator()
 
 State ParametricSimulator::GrowTree(const State& state, int age, bool useSDF)
 {
-	State newState = State();
-	FVector next_bud_position;
-	TArray<Branch> newBranches;
+	State newState;
 
 	for (int32 idx = 0; idx < state.branches.Num(); idx++) {
-		newState.branches.Add(state.branches[idx]);
+		Branch branch = state.branches[idx];
 
 		// check to kill apical bud
 		if (species.apicalExtinctionRate > 0.0) {
 			bool doesDie = checkState(species.apicalExtinctionRate);
 			if (doesDie) {
-				newState.branches[idx].state = STALE;
-				newState.branches[idx].nodes.Last().isAlive = false; // kill the bud
+				branch.state = STALE;
+				branch.nodes.Last().isAlive = false; // kill the bud
+				newState.branches.Add(std::move(branch));
 				continue;
 			}
 		}
 
-		for (int node_idx = 0; node_idx < newState.branches[idx].nodes.Num(); node_idx++) {
-			auto newNumBuds = newState.branches[idx].nodes[node_idx].numLatBuds;
+		TArray<Branch> newBranches;
+
+		for (int node_idx = 0; node_idx < branch.nodes.Num(); node_idx++) {
+			auto& node = branch.nodes[node_idx];
 
 			// check to kill lateral buds
-			for (int bud_idx = 0; bud_idx < newState.branches[idx].nodes[node_idx].numLatBuds; bud_idx++) {
+			int newNumBuds = node.numLatBuds;
+			for (int bud_idx = 0; bud_idx < node.numLatBuds; bud_idx++) {
 				if (checkState(species.lateralExtinctionRate)) 
 					newNumBuds--;
 			}
-			newState.branches[idx].nodes[node_idx].numLatBuds = newNumBuds;
+			node.numLatBuds = newNumBuds;
 
 			// lateral shoot growth with probability
-			int addedBranches = 0;
 			// TODO - should it be considered separately per bud???
 			bool growLateral = false;
-			if (newState.branches[idx].nodes[node_idx].numLatBuds > 0) {
-				growLateral = checkLateralGrowth(newState.branches[idx].nodes[node_idx].coordinates, state, age);
+			if (node.numLatBuds > 0) {
+				growLateral = checkLateralGrowth(node.coordinates, state, age, node.levelOfBranch);
 			}
-			
-  			for (int bud_idx = 0; bud_idx < newState.branches[idx].nodes[node_idx].numLatBuds; bud_idx++) {
+
+			for (int bud_idx = 0; bud_idx < node.numLatBuds; bud_idx++) {
 				if (growLateral) {
 					
-					auto rollAngle = randAngle(this->species.rollAngleMean, this->species.rollAngleVariance);
-					auto bendAngle = randAngle(this->species.bendingAngleMean, this->species.bendingAngleVariance);
+					float rollAngle = (360.f / node.numLatBuds) * bud_idx + randAngle(species.rollAngleMean, species.rollAngleVariance);
+					float bendAngle = randAngle(species.bendingAngleMean, species.bendingAngleVariance);
 
-					auto oldHeading = newState.branches[idx].nodes[node_idx].heading;
-					auto newHeading = oldHeading;
-					newHeading.X = oldHeading.X * cos((float)UKismetMathLibrary::DegreesToRadians(bendAngle)) - oldHeading.Z * sin((float)UKismetMathLibrary::DegreesToRadians(bendAngle));
-					newHeading.Z = oldHeading.X * sin((float)UKismetMathLibrary::DegreesToRadians(bendAngle)) + oldHeading.Z * cos((float)UKismetMathLibrary::DegreesToRadians(bendAngle));
+					FQuat localRotation(FRotator(bendAngle, rollAngle, 0));
+					FQuat newRotation = (node.orientation * localRotation);
 
-					newHeading.X = oldHeading.Y * cos((float)UKismetMathLibrary::DegreesToRadians(rollAngle)) - oldHeading.X * sin((float)UKismetMathLibrary::DegreesToRadians(rollAngle));
-					newHeading.Y = oldHeading.Y * sin((float)UKismetMathLibrary::DegreesToRadians(rollAngle)) + oldHeading.X * cos((float)UKismetMathLibrary::DegreesToRadians(rollAngle));
+					newBranches.Emplace(
+						node.coordinates,
+						newRotation,
+						node.levelOfBranch + 1,
+						0);
 
-					newBranches.Add(Branch(
-						newState.branches[idx].nodes[node_idx].coordinates,
-						newHeading,
-						newState.branches[idx].nodes[node_idx].levelOfBranch + 1,
-						0
-					));
-					addedBranches++;
+					FVector newHeading = newRotation.RotateVector(FVector::UpVector);
+					UE_LOG(TreeGenLog, Log,
+						TEXT("New branch created from bud at [%f, %f, %f] heading [%f, %f, %f] at level %d, roll=%f bend=%f"),
+						node.coordinates.X, node.coordinates.Y, node.coordinates.Z,
+						newHeading.X, newHeading.Y, newHeading.Z,
+						node.levelOfBranch + 1,
+						rollAngle,
+						bendAngle);
 
 					DrawDebugLine(
 						world,
-						newState.branches[idx].nodes[node_idx].coordinates,
-						newState.branches[idx].nodes[node_idx].coordinates + (newHeading * 10),
+						node.coordinates,
+						node.coordinates + (newHeading * 10),
 						FColor(0, 255, 0),
-						true
-					);
+						true);
 				}
 			}
-			newState.branches[idx].nodes[node_idx].numLatBuds -= addedBranches;
+
+			node.numLatBuds -= newBranches.Num();
 		}
 
 		// grow apically only for living branches
-		if (state.branches[idx].nodes.Last().isAlive) {
-			// TODO - add probability of this growth
-
-			if (checkApicalGrowth(state.branches[idx].nodes.Last().coordinates)) {
+		if (branch.nodes.Last().isAlive) {
+			bool doesGrow = checkApicalGrowth(branch.nodes.Last().coordinates);
+			if (doesGrow) {
 				// grow a new apical shoot
-				auto nextBuds = CalculateNextBuds(newState.branches[idx].nodes.Last(), age);
-
-				for (auto& bud : nextBuds) {
-					newState.branches[idx].nodes.Add(bud);
-				}
+				branch.nodes.Append(CalculateNextBuds(branch.nodes.Last(), age));
 			}
 		}
-	}
 
-	for (int i = 0; i < newBranches.Num(); i++) {
-		newState.branches.Add(newBranches[i]);
+		newState.branches.Add(std::move(branch));
+		newState.branches.Append(std::move(newBranches));
 	}
 
 	return newState;
@@ -137,39 +135,46 @@ TArray<Node> ParametricSimulator::CalculateNextBuds(const Node previous, const i
 	else {
 		actualGrowthRate = species.initialGrowthRate / FMath::Pow(actualApicalControl, maxBranchLevel);
 	}
-		
+
 	float actualInternodeLength = species.internodeBaseLength * FMath::Pow(species.internodeLengthAgeFactor, age);
 	int numOfInternodes = FMath::RoundToInt(actualGrowthRate);
 	float shootLength = actualInternodeLength * NODE_SCALE;
 
 	// apical angle variance
-	FVector2D polar_heading;
-	std::normal_distribution d{0.0f, (float)UKismetMathLibrary::DegreesToRadians(species.apicalAngleVariance) };
+	//FVector2D polar_heading;
+	//std::normal_distribution d{0.0f, (float)UKismetMathLibrary::DegreesToRadians(species.apicalAngleVariance) };
+	std::normal_distribution d{ 0.f, (float)species.apicalAngleVariance };
 
-	polar_heading.X = d(gen);
-	polar_heading.Y = (float)UKismetMathLibrary::DegreesToRadians(FMath::RandRange(0.0, 360.0));
-	auto var = polar_heading.SphericalToUnitCartesian();
+	//polar_heading.X = d(gen);
+	//polar_heading.Y = (float)UKismetMathLibrary::DegreesToRadians(FMath::RandRange(0.0, 360.0));
+	//auto var = polar_heading.SphericalToUnitCartesian();
+	
 
-	auto current_heading = previous.heading + var;	
 	TArray<Node> nodes;
-
-	auto coords = previous.coordinates;
-
 	for (int i = 0; i < numOfInternodes; i++) {
-		auto newNode = Node(coords + current_heading * shootLength, current_heading, true, previous.levelOfBranch, species.numOfLateralBuds);
-		coords = newNode.coordinates;
-		this->clusters.Add(coords);
+		FQuat varOrientation(FRotator(d(gen), FMath::RandRange(0, species.apicalAngleVariance), 0));
+		FQuat currentOrientation = (previous.orientation * varOrientation);
 
-		/*DrawDebugSphere(
-			world,
+		FVector currentHeading = currentOrientation.RotateVector(FVector::UpVector);
+		FVector coords = previous.coordinates;
+		coords += (currentHeading * shootLength);
+
+		UE_LOG(TreeGenLog, Log,
+			TEXT("New internode created at [%f, %f, %f] heading [%f, %f, %f] at level %d"),
+			coords.X, coords.Y, coords.Z,
+			currentHeading.X, currentHeading.Y, currentHeading.Z,
+			previous.levelOfBranch);
+
+		nodes.Emplace(
 			coords,
-			CLUSTER_RADIUS,
-			6,
-			FColor(0, 0, 255),
-			true
-		);*/
-		nodes.Add(newNode);
+			currentOrientation,
+			true,
+			previous.levelOfBranch,
+			species.numOfLateralBuds);
+
+		clusters.Add(coords);
 	}
+
 	return nodes;
 }
 
@@ -187,16 +192,19 @@ bool ParametricSimulator::checkApicalGrowth(FVector coords) {
 	return doesGrow;
 }
 
-bool ParametricSimulator::checkLateralGrowth(const FVector coords, const State& state, const int age) {
+bool ParametricSimulator::checkLateralGrowth(const FVector coords, const State& state, const int age, const int level) {
 	
 	float illumination = computeIllumination(coords);
 	float sum = 0.0f;
 
+	float distance = 1.0f;
 	// TODO compute distance between buds
-	float distance = 0.0f;
+
+	// TODO change state to Z-wise sorted list of coords
 	for (int i = 0; i < state.branches.Num(); i++) {
 		// if branch starts above coords - this means it is a flushed bud
 		if (state.branches[i].nodes[0].coordinates.Z > coords.Z) { // skip branches that start below or the same point
+			distance = state.branches[i].nodes[0].levelOfBranch;
 			sum += species.apicalDominanceBase * FMath::Pow(species.apicalDominanceAge, age) * FMath::Pow(species.apicalDominanceDistance, distance);
 		}
 	}
@@ -333,7 +341,8 @@ bool ParametricSimulator::traceRayMiss(const FVector& coords, const FVector& dir
 
 float ParametricSimulator::randAngle(const int angleMean, const int angleVariance) {
 	std::uniform_int_distribution d{ angleMean - angleVariance, angleMean + angleVariance };
-	return UKismetMathLibrary::DegreesToRadians(d(gen));
+	//return UKismetMathLibrary::DegreesToRadians(d(gen));
+	return d(gen);
 }
 
 FVector ParametricSimulator::Bend(FVector vector, float angleRad) {

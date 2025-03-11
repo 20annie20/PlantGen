@@ -39,6 +39,8 @@ void ATree::PostEditChangeProperty(struct FPropertyChangedEvent& e)
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ATree, species_id))
 	{
+		auto world = GetWorld();
+		simulator = ParametricSimulator(species_id, world);
 		ClearTree();
 		GenerateTree();
 	}
@@ -71,6 +73,7 @@ void ATree::RefreshMesh(const State& state) {
 		USplineComponent* SplineComponent = (USplineComponent*)GetDefaultSubobjectByName(branch_name);
 		if (SplineComponent == NULL) {
 			SplineComponent = NewObject<USplineComponent>(this, branch_name);
+			SplineComponent->SetMobility(EComponentMobility::Static);
 			SplineComponent->RegisterComponent();
 			SplineComponent->ComponentTags.Add(TEXT("Spline"));
 		}
@@ -96,8 +99,9 @@ void ATree::RefreshMesh(const State& state) {
 			
 			if (smc == NULL) {
 				smc = NewObject<USplineMeshComponent>(this, name);
-				smc->AttachToComponent(SplineComponent, FAttachmentTransformRules::KeepRelativeTransform);
+				smc->SetMobility(EComponentMobility::Static);
 				smc->SetForwardAxis(ESplineMeshAxis::Type::Z);
+				smc->AttachToComponent(SplineComponent, FAttachmentTransformRules::KeepRelativeTransform);
 				smc->ComponentTags.Add(TEXT("SMC"));
 
 				// TODO WA the end_tangent problem && clean the meshes from the smcs on the state restore 

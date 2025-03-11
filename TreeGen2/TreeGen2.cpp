@@ -4,3 +4,5 @@
 #include "Modules/ModuleManager.h"
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, TreeGen2, "TreeGen2" );
+
+DEFINE_LOG_CATEGORY(TreeGenLog);
