@@ -3,9 +3,9 @@
 #pragma once
 #include "CoreMinimal.h"
 
-enum BranchState {
-	ACTIVE = 1,
-	STALE = 0
+enum class BranchState {
+	Active = 1,
+	Stale = 0
 };
 
 struct Node {
@@ -22,8 +22,15 @@ public:
 	TArray<Node> nodes;
 	BranchState state;
 
+	// Number of nodes between the root of this branch and the root of the entire tree.
+	// Used to calculate thickness of the branch at its base.
+	int rootTreeDepth;
+
+	// Number of branches growing out of this branch.
+	int numChildBranches;
+
 	Branch();
-	Branch(FVector coords, FQuat rotation, int level, int numBuds);
+	Branch(FVector coords, FQuat rotation, int level, int numBuds, int rootTreeDepth);
 
 	~Branch();
 };

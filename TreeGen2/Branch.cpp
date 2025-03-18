@@ -4,16 +4,20 @@
 #include "Branch.h"
 
 Branch::Branch()
+	: state(BranchState::Active)
+	, rootTreeDepth(0)
+	, numChildBranches(0)
 {
 	nodes.AddDefaulted();
-	state = ACTIVE;
 }
 
 // TODO - update this function for lateral buds creation
-Branch::Branch(FVector coords, FQuat rotation, int level, int numBuds)
+Branch::Branch(FVector coords, FQuat rotation, int level, int numBuds, int rootTreeDepth)
+	: state(BranchState::Active)
+	, rootTreeDepth(rootTreeDepth)
+	, numChildBranches(0)
 {
 	nodes.Add(Node(coords, rotation, true, level, numBuds));
-	state = ACTIVE;
 }
 
 Branch::~Branch()

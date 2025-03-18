@@ -11,9 +11,13 @@
 UENUM() 
 enum Species_ID
 {
+	ACACIA,
+	APPLE,
+	WILLOW,
 	MAPLE,
-	PINE,
-	OAK
+	BIRCH,
+	OAK,
+	PINE
 };
 
 class TREEGEN2_API Species
@@ -28,8 +32,8 @@ public:
 	float internodeLengthAgeFactor;	// IL_AF
 	int	  apicalAngleVariance;		// AAV
 
-	int	  bendingAngleMean;		// BAM
-	int	  bendingAngleVariance;	// BAV
+	int	  bendingAngleMean;			// BAM
+	int	  bendingAngleVariance;		// BAV
 	int	  rollAngleMean;			// RAM
 	int	  rollAngleVariance;		// RAV
 	

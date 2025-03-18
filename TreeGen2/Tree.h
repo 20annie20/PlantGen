@@ -9,9 +9,12 @@
 #include "Branch.h"
 #include "Tree.generated.h"
 
+class USplineMeshComponent;
 
 struct State {
 	TArray<Branch> branches;
+
+	int CalcHeight(int startIdx) const;
 };
 
 UCLASS()
@@ -41,6 +44,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Leaves)
 	UStaticMesh* LeafStaticMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tree)
+	float RootBranchThickness;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tree)
+	float LastBranchThickness;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Tree)
+	float BranchLevelThicknessFactor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Leaves)
+	float LeafScale;
+
 	void PostEditChangeProperty(struct FPropertyChangedEvent& e) override;
 	
 protected:
@@ -58,8 +73,11 @@ protected:
 	void ClearTree();
 
 	void AssignTreeMaterial();
-
 	void AssignTreeMesh();
+	void AssignLeafMaterial();
+	void AssignLeafMesh();
+
+	void UpdateBranchThickness(USplineMeshComponent* smc, const Branch& branch, int nodeIdx, int treeHeight);
 
 public:	
 	// Called every frame

@@ -9,8 +9,8 @@
 
 #include "DrawDebugHelpers.h"   // Include the DrawDebugHelpers header
 
-#define CLUSTER_RADIUS 10.0F
-#define NODE_SCALE 40.0F
+#define CLUSTER_RADIUS 20.0F
+#define NODE_SCALE 80.0F
 
 std::random_device rd{};
 std::mt19937 gen{ rd() };
@@ -20,6 +20,7 @@ ParametricSimulator::ParametricSimulator()
 	this->species = Species(MAPLE);
 	this->maxBranchLevel = 0;
 	this->clusters.Empty();
+	this->world = nullptr;
 }
 
 ParametricSimulator::ParametricSimulator(Species_ID species_id, const UWorld* world)
@@ -41,17 +42,7 @@ State ParametricSimulator::GrowTree(const State& state, int age, bool useSDF)
 	for (int32 idx = 0; idx < state.branches.Num(); idx++) {
 		Branch branch = state.branches[idx];
 
-		// check to kill apical bud
-		if (species.apicalExtinctionRate > 0.0) {
-			bool doesDie = checkState(species.apicalExtinctionRate);
-			if (doesDie) {
-				branch.state = STALE;
-				branch.nodes.Last().isAlive = false; // kill the bud
-				newState.branches.Add(std::move(branch));
-				continue;
-			}
-		}
-
+		// grow new branches
 		TArray<Branch> newBranches;
 
 		for (int node_idx = 0; node_idx < branch.nodes.Num(); node_idx++) {
@@ -66,16 +57,17 @@ State ParametricSimulator::GrowTree(const State& state, int age, bool useSDF)
 			node.numLatBuds = newNumBuds;
 
 			// lateral shoot growth with probability
-			// TODO - should it be considered separately per bud???
 			bool growLateral = false;
 			if (node.numLatBuds > 0) {
 				growLateral = checkLateralGrowth(node.coordinates, state, age, node.levelOfBranch);
 			}
 
+			float rollAngle = 0.0f;
+			int newNumBranches = 0;
 			for (int bud_idx = 0; bud_idx < node.numLatBuds; bud_idx++) {
 				if (growLateral) {
 					
-					float rollAngle = (360.f / node.numLatBuds) * bud_idx + randAngle(species.rollAngleMean, species.rollAngleVariance);
+					rollAngle += randAngle(species.rollAngleMean, species.rollAngleVariance);
 					float bendAngle = randAngle(species.bendingAngleMean, species.bendingAngleVariance);
 
 					FQuat localRotation(FRotator(bendAngle, rollAngle, 0));
@@ -85,7 +77,8 @@ State ParametricSimulator::GrowTree(const State& state, int age, bool useSDF)
 						node.coordinates,
 						newRotation,
 						node.levelOfBranch + 1,
-						0);
+						0,
+						branch.rootTreeDepth + node_idx);
 
 					FVector newHeading = newRotation.RotateVector(FVector::UpVector);
 					UE_LOG(TreeGenLog, Log,
@@ -96,17 +89,21 @@ State ParametricSimulator::GrowTree(const State& state, int age, bool useSDF)
 						rollAngle,
 						bendAngle);
 
-					DrawDebugLine(
+					/*DrawDebugLine(
 						world,
 						node.coordinates,
 						node.coordinates + (newHeading * 10),
 						FColor(0, 255, 0),
-						true);
+						true);*/
+
+					newNumBranches++;
 				}
 			}
 
-			node.numLatBuds -= newBranches.Num();
+			node.numLatBuds -= newNumBranches;
 		}
+
+		branch.numChildBranches += newBranches.Num();
 
 		// grow apically only for living branches
 		if (branch.nodes.Last().isAlive) {
@@ -118,6 +115,16 @@ State ParametricSimulator::GrowTree(const State& state, int age, bool useSDF)
 		}
 
 		newState.branches.Add(std::move(branch));
+
+		// check to kill apical bud
+		if (species.apicalExtinctionRate > 0.0) {
+			bool doesDie = checkState(species.apicalExtinctionRate);
+			if (doesDie) {
+				branch.state = BranchState::Stale;
+				branch.nodes.Last().isAlive = false; // kill the bud
+			}
+		}
+
 		newState.branches.Append(std::move(newBranches));
 	}
 
@@ -141,14 +148,7 @@ TArray<Node> ParametricSimulator::CalculateNextBuds(const Node previous, const i
 	float shootLength = actualInternodeLength * NODE_SCALE;
 
 	// apical angle variance
-	//FVector2D polar_heading;
-	//std::normal_distribution d{0.0f, (float)UKismetMathLibrary::DegreesToRadians(species.apicalAngleVariance) };
 	std::normal_distribution d{ 0.f, (float)species.apicalAngleVariance };
-
-	//polar_heading.X = d(gen);
-	//polar_heading.Y = (float)UKismetMathLibrary::DegreesToRadians(FMath::RandRange(0.0, 360.0));
-	//auto var = polar_heading.SphericalToUnitCartesian();
-	
 
 	TArray<Node> nodes;
 	for (int i = 0; i < numOfInternodes; i++) {
